@@ -1,0 +1,15 @@
+{
+  "name": "sepia",
+  "author": "Avik Das <adas@linkedin.com>",
+  "version": "0.0.1",
+  "description": "A VCR-like module that records HTTP interactions and plays them back for speed and reliability",
+  "devDependencies": {
+    "request": "*",
+    "lodash": "*",
+    "step": "*",
+    "jshint": "*"
+  },
+  "scripts": {
+    "test": "node examples/examples.js"
+  }
+}
