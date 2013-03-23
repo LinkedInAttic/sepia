@@ -25,8 +25,9 @@ variable set to the correct value:
     npm start                   # no sepia
     VCR_MODE=record npm start   # sepia, in record mode
     VCR_MODE=playback npm start # sepia, in playback mode
+    VCR_MODE=cache npm start    # sepia, in cache mode
 
-## Example
+## Examples
 
     cd sepia
     npm install
@@ -36,6 +37,16 @@ variable set to the correct value:
 The example is located in `examples/example.js`. It exercises some of the
 features of the module, and demonstrates that even requests made with the
 `request` module are intercepted properly.
+
+    cd sepia
+    npm install
+    rm -r fixtures # in case you had previously generated fixtures
+    VCR_MODE=cache node examples/cache.js
+
+This example demonstrates the cache mode, which makes a real HTTP request and
+records it if the fixture does not exist, but then reuses the fixture if it
+does exist. Notice that the first call takes about one second, whereas the
+second call finishes quickly.
 
 ## Fixture Data
 
