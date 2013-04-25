@@ -59,6 +59,29 @@ which the application was started. To override this:
 
 If this directory doesn't exist, it will be created.
 
+## Configure
+
+By default, the sepia module is configured to include certain default properties
+which are able to be overwritten by making a call to configure using the following
+method.
+
+```
+    var sepia = require('sepia');
+    sepia.configure({
+      includeHeaderNames: true,
+      includeCookieNames: true,
+      verbose: true
+    });
+```
+
+These properties select the following:
+ * includeHeaderNames - includes the collection of header names sorted and lowercased
+    when creating the hash.
+ * includeCookieNames - includes the collection of cookie names sorted and lowercased
+    when creating the hash.
+ * verbose - Prints when a hash was hit and missed when recording or playing back with
+    a body containing the parts used to create the name.
+
 ## URL and Body Filtering
 
 When determining which fixture file to record to, or read from during
