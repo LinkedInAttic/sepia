@@ -38,6 +38,14 @@ module.exports.configure = function(options) {
         reqBody.push(lastChunk);
       }
 
+      reqBody = reqBody.map(function (chunk) {
+        if (!Buffer.isBuffer(chunk)) {
+          return new Buffer(chunk);
+        } else {
+          return chunk;
+        }
+      });
+
       reqBody = Buffer.concat(reqBody);
       var filename = sepiaUtil.constructFilename(options.method, reqUrl,
                                                   reqBody.toString(), options.headers);
