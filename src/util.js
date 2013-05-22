@@ -16,6 +16,9 @@ var includeCookieNames = true;
 //give verbose output for hits and misses in log.
 var verbose = false;
 
+//Touch the cached file every time its used.
+var touchHits = true;
+
 function configure(options) {
   if (options.includeHeaderNames != null) {
     includeHeaderNames = options.includeHeaderNames;
@@ -25,6 +28,9 @@ function configure(options) {
   }
   if (options.verbose != null) {
     verbose = options.verbose;
+  }
+  if (options.touchHits != null) {
+    touchHits = options.touchHits;
   }
 }
 
@@ -117,8 +123,9 @@ function constructFilename(method, reqUrl, reqBody, reqHeaders) {
 
   var hashFile = path.join(folder, filename).toString();
 
+  var exists = (verbose || touchHits) && fs.existsSync(hashFile + '.headers');
+
   if (verbose) {
-    var exists = fs.existsSync(hashFile + '.headers');
     if (exists) {
       logSuccess('====Cache Hit=====================================\n',
                   hashBody,
@@ -133,6 +140,12 @@ function constructFilename(method, reqUrl, reqBody, reqHeaders) {
                   '\n=========================================\n');
     }
   }
+
+  //start a process to touch the hash file to notify watchers that it changed.
+  if (touchHits && exists){
+    fs.utimesSync(hashFile + '.headers', new Date(), new Date())
+  }
+
 
   return hashFile;
 }
