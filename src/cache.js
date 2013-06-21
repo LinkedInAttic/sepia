@@ -5,7 +5,7 @@ var EventEmitter = require('events').EventEmitter;
 var playbackHits = true;
 var recordMisses = true;
 var emulateTiming = false;
-
+var createMissingFiles = true;
 
 module.exports.configure = function(options) {
   playbackHits = options.playback;
@@ -121,6 +121,15 @@ module.exports.configure = function(options) {
 
       //if we are not recording and the fixtures does not exist, then throw an exception
       if (!recordMisses) {
+        if (createMissingFiles) {
+          var requestData = {
+            url: reqUrl,
+            method: options.method,
+            headers: options.headers,
+            body: reqBody.toString()
+          }
+          fs.writeFileSync(filename + '.missing', JSON.stringify(requestData, null, 2));
+        }
         throw new Error('Fixture ' + filename + ' not found.');
       }
 
@@ -133,6 +142,10 @@ module.exports.configure = function(options) {
         var timeLength = new Date().getTime() - startTime;
         headers.url = reqUrl;
         headers.time = timeLength;
+        headers.request = {
+            method: options.method,
+            headers: options.headers
+          }
         fs.writeFileSync(filename + '.headers', JSON.stringify(headers, null, 2));
       }
 
