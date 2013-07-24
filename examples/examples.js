@@ -219,5 +219,6 @@ step(
   function() { filters   (this); },
   function() { languages (this); },
   function() { fixtureDir(this); },
-  _.bind(httpServer.close, httpServer)
+  _.bind(httpServer.close, httpServer),
+  function() { process.exit(0); }
 );

@@ -134,5 +134,6 @@ step(
       }
     }, this);
   },
-  _.bind(httpServer.close, httpServer)
+  _.bind(httpServer.close, httpServer),
+  function() { process.exit(0); }
 );

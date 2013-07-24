@@ -19,6 +19,8 @@ var verbose = false;
 //Touch the cached file every time its used.
 var touchHits = true;
 
+var testOptions = {};
+
 function configure(options) {
   if (options.includeHeaderNames != null) {
     includeHeaderNames = options.includeHeaderNames;
@@ -80,6 +82,13 @@ function parseHeaderNames(headers) {
   return headerNames.sort();
 }
 
+/**
+/* We only support testName option now. Example: { testName: 'test1' }
+ */
+function setTestOptions(options) {
+  testOptions = {};
+  testOptions.testName = options.testName;
+}
 
 function constructFilename(method, reqUrl, reqBody, reqHeaders) {
   if (!method) {
@@ -118,7 +127,8 @@ function constructFilename(method, reqUrl, reqBody, reqHeaders) {
   language = language.split(',')[0];
 
   // use a different folder for each language
-  var folder = path.resolve(filenamePrefix, language);
+  var testFolder = testOptions.testName || '';
+  var folder = path.resolve(filenamePrefix, language, testFolder);
   mkdirpSync(folder);
 
   var hashFile = path.join(folder, filename).toString();
@@ -203,6 +213,7 @@ module.exports.addFilter = addFilter;
 module.exports.configure = configure;
 module.exports.logSuccess = logSuccess;
 module.exports.logError = logError;
+module.exports.setTestOptions = setTestOptions;
 
 
 

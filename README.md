@@ -125,6 +125,41 @@ on the request body. Either `urlFilter` or `bodyFilter` may be specified.
 Multiple calls to `sepia#filter` may be made. All matching filters are applied
 in the order they are specified.
 
+## VCR Cassettes
+
+A series of downstream requests can be isolated, and their fixtures stored in a
+separate directory, using sepia.fixtureDir(). However, this requires that the
+grouping happens in the same process as the one running sepia. Imagine,
+however, running a test against a server in a completely different process.
+
+To help manage the sepia instance in a separate process, sepia itself starts up
+an embedded HTTP server in the process where it replaces the HTTP request
+functions. The test process can then communicate with this HTTP server and set
+options, namely the directory into which fixtures will go. This can be used to
+emulate "cassette"-like functionality:
+
+    // suppose the process that is running sepia is bound to port 8080
+    // in the test process
+    request.post({
+      url: 'localhost:58080/testOptions', // sepia's embedded server
+      json: {
+        testName: 'test1'
+      }
+    }, function(err, res, body) {
+      // now, all requests made by localhost:8080 will have their fixtures
+      // isolated into a directory name 'test1'
+      request.get({
+        url: 'localhost:8080/makeDownstreamRequests'
+      });
+    });
+
+Note that the functionality of setting the test options will be available in a
+sepia client library in the future.
+
+Currently, the port of the embedded server is hard-coded to be `58080`, but
+this will be configurable in the future. Furthermore, only the "test name" can
+be set, but more options may become available.
+
 ## Limitations
 
 ### Repeated Identical HTTP Requests
