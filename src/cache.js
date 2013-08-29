@@ -51,9 +51,11 @@ module.exports.configure = function(options) {
                                                   reqBody.toString(), options.headers);
 
 
-      function playback(doneTimeout) {
-        var headerContent = fs.readFileSync(filename + '.headers');
-        var resHeaders = JSON.parse(headerContent);
+      function playback(doneTimeout, resHeaders, resBody) {
+        if (!isAlwaysRecord) {
+          var headerContent = fs.readFileSync(filename + '.headers');
+          resHeaders = JSON.parse(headerContent);
+        }
 
 
         if (emulateTiming && !doneTimeout) {
@@ -104,23 +106,26 @@ module.exports.configure = function(options) {
         if (callback) {
           callback(res);
         }
-
-        var resBody = fs.readFileSync(filename);
+        if (!isAlwaysRecord) {
+          resBody = fs.readFileSync(filename);
+        }
         req.emit('response', res);
         res.emit('data', resBody);
         res.emit('end');
       }
 
+      var isAlwaysRecord = sepiaUtil.isAlwaysRecord(reqUrl);
+
       //if the file exists and we allow playback (we are not in record only mode)
       //then playback the call.
-      if (fs.existsSync(filename + '.headers') && playbackHits) {
+      if (fs.existsSync(filename + '.headers') && (playbackHits && !isAlwaysRecord)) {
         playback();
         return;
       }
 
 
       //if we are not recording and the fixtures does not exist, then throw an exception
-      if (!recordMisses) {
+      if (!(recordMisses || isAlwaysRecord)) {
         if (createMissingFiles) {
           var requestData = {
             url: reqUrl,
@@ -153,11 +158,12 @@ module.exports.configure = function(options) {
       // Otherwise if this times out after a few seconds, and the request stops waiting
       // and the recording is over, then this will not ever get writen to a file and
       // on playback the fixture file won't be found.
-      writeHeaderFile({
-        timeout: true,
-        time: 30000
-      });
-
+      if (!isAlwaysRecord) {
+        writeHeaderFile({
+          timeout: true,
+          time: 30000
+        });
+      }
 
       var realReq = oldRequest(options, function(res) {
         // It's important that we don't respect the encoding set by
@@ -176,15 +182,21 @@ module.exports.configure = function(options) {
 
         res.on('end', function() {
           var resBody = Buffer.concat(resBodyChunks);
+          if (!isAlwaysRecord) {
+            fs.writeFileSync(filename, resBody);
 
-          fs.writeFileSync(filename, resBody);
+            writeHeaderFile({
+              statusCode: res.statusCode,
+              headers: res.headers
+            });
+            playback();
+          } else {
+            playback(undefined, {
+              statusCode: res.statusCode,
+              headers: res.headers
+            }, resBody);
+          }
 
-          writeHeaderFile({
-            statusCode: res.statusCode,
-            headers: res.headers
-          });
-
-          playback();
         });
 
       });
@@ -196,9 +208,12 @@ module.exports.configure = function(options) {
         if (timedOut) {
           header.timeout = true;
         }
-        writeHeaderFile(header);
-
-        playback();
+        if (!isAlwaysRecord) {
+          writeHeaderFile(header);
+          playback();
+        } else {
+          playback(undefined, header);
+        }
       });
       realReq.on('socket', function (socket) {
         socket.on('timeout', function () {

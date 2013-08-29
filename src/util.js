@@ -7,6 +7,8 @@ var filenamePrefix = path.join(process.cwd(), 'fixtures/generated');
 
 var filenameFilters = [];
 
+var alwaysRecordOverrideUrls = [];
+
 //include headers names in the hash
 var includeHeaderNames = true;
 
@@ -206,13 +208,25 @@ function logSuccess() {
   log('\033[32m', arguments);
 }
 
+function isAlwaysRecord(reqUrl) {
+  return alwaysRecordOverrideUrls.some(function(url) {
+    return reqUrl.indexOf(url) >= 0;
+  });
+}
+
+function addAlwaysRecordOverride(url) {
+  alwaysRecordOverrideUrls.push(url);
+}
+
 module.exports.setFixtureDir = setFixtureDir;
 module.exports.constructFilename = constructFilename;
 module.exports.urlFromHttpRequestOptions = urlFromHttpRequestOptions;
 module.exports.addFilter = addFilter;
+module.exports.addAlwaysRecordOverride = addAlwaysRecordOverride;
 module.exports.configure = configure;
 module.exports.logSuccess = logSuccess;
 module.exports.logError = logError;
+module.exports.isAlwaysRecord = isAlwaysRecord;
 module.exports.setTestOptions = setTestOptions;
 
 

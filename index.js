@@ -23,5 +23,6 @@ case 'cache':
 
 var sepiaUtil = require('./src/util');
 module.exports.filter = sepiaUtil.addFilter;
+module.exports.addRecordOverride = sepiaUtil.addAlwaysRecordOverride;
 module.exports.fixtureDir = sepiaUtil.setFixtureDir;
 module.exports.configure = sepiaUtil.configure;
