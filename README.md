@@ -61,26 +61,19 @@ If this directory doesn't exist, it will be created.
 
 ## Configure
 
-By default, the sepia module is configured to include certain default properties
-which are able to be overwritten by making a call to configure using the following
-method.
+Sepia can be optionally configured using a call to `sepia.configure()`. All
+options have default values, so they need not be configured unless necessary.
 
-```
     var sepia = require('sepia');
     sepia.configure({
-      includeHeaderNames: true,
-      includeCookieNames: true,
       verbose: true
     });
-```
 
-These properties select the following:
- * includeHeaderNames - includes the collection of header names sorted and lowercased
-    when creating the hash.
- * includeCookieNames - includes the collection of cookie names sorted and lowercased
-    when creating the hash.
- * verbose - Prints when a hash was hit and missed when recording or playing back with
-    a body containing the parts used to create the name.
+The full list of options are as follows:
+
+- `verbose`: outputs extra data whenever a fixture is accessed, along with the
+  parts used to create the name of the fixture.
+- `includeHeaderNames`, `includeCookieNames`: detailed in a later section
 
 ## URL and Body Filtering
 
@@ -124,6 +117,28 @@ on the request body. Either `urlFilter` or `bodyFilter` may be specified.
 
 Multiple calls to `sepia#filter` may be made. All matching filters are applied
 in the order they are specified.
+
+## Headers and Cookies
+
+HTTP headers and cookies are often relevant to the way requests are served, but
+their exact values are often highly variable. For example, the presence of
+certain cookies may affect the authentication mechanism used behind the scenes,
+and while one may wish to exercise both mechanisms, it is not useful to require
+that the actual authentication cookie have a particular value.
+
+Sepia generates filenames based on the presence and absence of header and
+cookie _names_. In particular, all the header names are lower-cased and sorted
+alphabetically, and this list is used to construct the fixture filename
+corresponding to a request. The same applies to the cookie names.
+
+If this feature is not desired, it can be disabled by calling
+`sepia.configure()`:
+
+    var sepia = require('sepia');
+    sepia.configure({
+      includeHeaderNames: false,
+      includeCookieNames: false
+    });
 
 ## VCR Cassettes
 
