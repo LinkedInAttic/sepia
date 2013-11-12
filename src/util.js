@@ -11,9 +11,11 @@ var alwaysRecordOverrideUrls = [];
 
 //include headers names in the hash
 var includeHeaderNames = true;
+var headerWhitelist = [];
 
 //include cookies names in the hash
 var includeCookieNames = true;
+var cookieWhitelist = [];
 
 //give verbose output for hits and misses in log.
 var verbose = false;
@@ -27,8 +29,18 @@ function configure(options) {
   if (options.includeHeaderNames != null) {
     includeHeaderNames = options.includeHeaderNames;
   }
+  if (options.headerWhitelist != null) {
+    headerWhitelist = options.headerWhitelist.map(function(item) {
+      return item.toLowerCase();
+    });
+  }
   if (options.includeCookieNames != null) {
     includeCookieNames = options.includeCookieNames;
+  }
+  if (options.cookieWhitelist != null) {
+    cookieWhitelist = options.cookieWhitelist.map(function(item) {
+      return item.toLowerCase();
+    });
   }
   if (options.verbose != null) {
     verbose = options.verbose;
@@ -53,6 +65,16 @@ function mkdirpSync(folder) {
   }
 }
 
+function filterByWhitelist(list, whitelist) {
+  if (whitelist.length === 0) {
+    return list;
+  }
+
+  return list.filter(function(item) {
+    return whitelist.indexOf(item) >= 0;
+  });
+}
+
 function parseCookiesNames(cookieValue) {
   var cookies = [];
 
@@ -71,6 +93,7 @@ function parseCookiesNames(cookieValue) {
     }
   });
 
+  cookies = filterByWhitelist(cookies, cookieWhitelist);
   return cookies.sort();
 }
 
@@ -81,6 +104,8 @@ function parseHeaderNames(headers) {
       headerNames.push(name.toLowerCase());
     }
   }
+
+  headerNames = filterByWhitelist(headerNames, headerWhitelist);
   return headerNames.sort();
 }
 
@@ -229,5 +254,5 @@ module.exports.logError = logError;
 module.exports.isAlwaysRecord = isAlwaysRecord;
 module.exports.setTestOptions = setTestOptions;
 
-
-
+module.exports.internal = {};
+module.exports.internal.filterByWhitelist = filterByWhitelist;

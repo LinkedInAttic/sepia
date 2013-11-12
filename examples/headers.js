@@ -134,6 +134,32 @@ step(
       }
     }, this);
   },
+  function() {
+    sepia.configure({
+      headerWhitelist: ['H1', 'h2'], // capitalization doesn't matter
+      cookieWhitelist: ['C1', 'c2']  // capitalization doesn't matter
+    });
+
+    makeRequests('SAME WHITELISTED HEADERS + SAME WHITELISTED COOKIES', {
+      H1: 'value1',
+      H2: 'value2',
+      H3: 'value3',
+      cookie: {
+        C1: 'value4',
+        C2: 'value5',
+        C3: 'value6'
+      }
+    }, {
+      H1: 'value7',
+      H2: 'value8',
+      H4: 'value9', // this header won't be used to determine the fixture
+      cookie: {
+        C1: 'value10',
+        C2: 'value11',
+        C4: 'value11' // this cookie won't be used to determine the fixture
+      }
+    }, this);
+  },
   _.bind(httpServer.close, httpServer),
   function() { process.exit(0); }
 );

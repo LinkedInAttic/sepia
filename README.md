@@ -73,7 +73,8 @@ The full list of options are as follows:
 
 - `verbose`: outputs extra data whenever a fixture is accessed, along with the
   parts used to create the name of the fixture.
-- `includeHeaderNames`, `includeCookieNames`: detailed in a later section
+- `includeHeaderNames`, `headerWhitelist`, `includeCookieNames`,
+  `cookieWhitelist`: detailed in a later section
 
 ## URL and Body Filtering
 
@@ -139,6 +140,27 @@ If this feature is not desired, it can be disabled by calling
       includeHeaderNames: false,
       includeCookieNames: false
     });
+
+Additionally, a whitelist can be specified for the headers or for the cookies.
+If the whitelist is empty, as is the default, all header names and cookie names
+will be used to construct the fixture filename. If either whitelist has any
+strings in it, only the corresponding headers or cookies will be used to
+construct the filename. Either whitelist can be specified in isolation or both
+may be specified:
+
+
+    var sepia = require('sepia');
+    sepia.configure({
+      headerWhitelist: ['upgrade', 'via', 'x-custom'],
+      cookieWhitelist: ['oldAuth', 'newAuth']
+    });
+
+Note that capitalization does not matter.
+
+Examples of this functionality can be seen in `examples/headers.js`:
+
+    rm -r fixtures # in case you had previously generated fixtures
+    VCR_MODE=cache node examples/headers.js
 
 ## VCR Cassettes
 

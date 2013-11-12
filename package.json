@@ -7,7 +7,9 @@
     "request": "*",
     "lodash": "*",
     "step": "*",
-    "jshint": "*"
+    "jshint": "*",
+    "mocha": "1.x",
+    "should": "2.x"
   },
   "scripts": {
     "test": "node examples/examples.js"
