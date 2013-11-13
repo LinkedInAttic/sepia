@@ -6,6 +6,21 @@ var step = require('step');
 
 var sepia = require('..');
 
+var shouldBeFast;
+switch (process.env.VCR_MODE) {
+case 'record':
+  shouldBeFast = false;
+  break;
+case 'playback':
+  shouldBeFast = true;
+  break;
+default:
+  shouldBeFast = false;
+  break;
+
+// shouldBeFast is ignored in cache mode
+}
+
 // -- ECHO SERVER --------------------------------------------------------------
 
 var httpServer = http.createServer(function(req, res) {
@@ -32,8 +47,12 @@ var httpServer = http.createServer(function(req, res) {
         lang = lang.split(',')[0];
       }
       switch (lang) {
-        case 'en': resBody = 'Hello'; break;
-        case 'sp': resBody = 'Hola' ; break;
+      case 'en':
+        resBody = 'Hello';
+        break;
+      case 'sp':
+        resBody = 'Hola';
+        break;
       }
     }
 
@@ -45,9 +64,29 @@ var httpServer = http.createServer(function(req, res) {
   });
 }).listen(1337, '0.0.0.0');
 
+// -- LOGGING ------------------------------------------------------------------
+
+function logTime(shouldBeFast, start) {
+  var time = Date.now() - start;
+  console.log('  time   :', time);
+
+  if (process.env.VCR_MODE === 'cache') {
+    return;
+  }
+
+  if ((shouldBeFast && time > 10) ||
+    (!shouldBeFast && time < 500)) {
+    console.log('\033[1;31mFAIL\033[0m');
+  } else {
+    console.log('\033[1;32mSUCCESS\033[0m');
+  }
+}
+
 // -- HTTP REQUESTS ------------------------------------------------------------
 
 function viaHttp(next) {
+  var start = Date.now();
+
   var httpReq = http.request({
     host: 'localhost',
     port: 1337,
@@ -69,6 +108,7 @@ function viaHttp(next) {
       console.log('  status :', res.statusCode);
       console.log('  headers:', JSON.stringify(filteredHeaders));
       console.log('  body   :', body);
+      logTime(shouldBeFast, start);
       console.log();
 
       next();
@@ -78,6 +118,8 @@ function viaHttp(next) {
 }
 
 function viaRequest(next) {
+  var start = Date.now();
+
   request({
     url: 'http://localhost:1337/upper',
     method: 'POST',
@@ -94,6 +136,7 @@ function viaRequest(next) {
     console.log('  status :', data.statusCode);
     console.log('  headers:', JSON.stringify(filteredHeaders));
     console.log('  body   :', body);
+    logTime(shouldBeFast, start);
     console.log();
 
     next();
@@ -101,6 +144,8 @@ function viaRequest(next) {
 }
 
 function unicode(next) {
+  var start = Date.now();
+
   // When body data is treated as a string, there are issues writing it to a
   // file. In this specific case, the character 0xA0 (non-breaking space)
   // causes the last character of the body to not be written to the file. We
@@ -128,6 +173,7 @@ function unicode(next) {
       console.log('UNICODE');
       console.log('  status :', res.statusCode);
       console.log('  body   :', body);
+      logTime(shouldBeFast, start);
       console.log();
 
       next();
@@ -137,6 +183,8 @@ function unicode(next) {
 }
 
 function filters(next) {
+  var start = Date.now();
+
   var timestamp = Date.now();
   var body = 'time * 2 = ' + (timestamp * 2);
 
@@ -161,6 +209,7 @@ function filters(next) {
     console.log('FILTERS');
     console.log('  status :', data.statusCode);
     console.log('  body   :', body);
+    logTime(shouldBeFast, start);
     console.log();
 
     next();
@@ -168,6 +217,8 @@ function filters(next) {
 }
 
 function languages(next) {
+  var start = Date.now();
+
   function once(lang, cb) {
     request({
       url: 'http://localhost:1337/lang/',
@@ -179,6 +230,7 @@ function languages(next) {
       console.log('LANGUAGES');
       console.log('  status :', data.statusCode);
       console.log('  body   :', body);
+      logTime(shouldBeFast, start);
 
       cb();
     });
@@ -192,6 +244,8 @@ function languages(next) {
 }
 
 function fixtureDir(next) {
+  var start = Date.now();
+
   sepia.fixtureDir(path.join(process.cwd(), 'fixtures/custom'));
 
   request({
@@ -202,6 +256,7 @@ function fixtureDir(next) {
     console.log('FIXTURES DIRECTORY');
     console.log('  status :', data.statusCode);
     console.log('  body   :', body);
+    logTime(shouldBeFast, start);
 
     sepia.fixtureDir(path.join(process.cwd(), 'fixtures/generated'));
 

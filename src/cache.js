@@ -4,22 +4,35 @@ var EventEmitter = require('events').EventEmitter;
 
 var playbackHits = true;
 var recordMisses = true;
-var emulateTiming = false;
-var createMissingFiles = true;
 
-module.exports.configure = function(options) {
-  playbackHits = options.playback;
-  recordMisses = options.record;
-  emulateTiming = options.emulateTiming;
+module.exports.configure = function(mode) {
+  switch (mode) {
+  case 'record':
+    playbackHits = false;
+    recordMisses = true;
+    break;
+
+  case 'playback':
+    playbackHits = true;
+    recordMisses = false;
+    break;
+
+  case 'cache':
+    playbackHits = true;
+    recordMisses = true;
+    break;
+
+  default:
+    throw new Error('Unrecognized mode: ' + mode);
+  }
 };
 
 ['http', 'https'].forEach(function(protocol) {
-
   var protocolModule = require(protocol);
   var oldRequest = protocolModule.request;
 
-  //ensures there are enough agents to handle timeout issues that arise due to slow servers or unaccessible
-  //servers in development environment.
+  // Ensure there are enough sockets to handle timeout issues that arise due to
+  // slow servers or unaccessible servers when recording.
   protocolModule.globalAgent.maxSockets = 1000;
 
   protocolModule.request = function(options, callback) {
@@ -38,7 +51,7 @@ module.exports.configure = function(options) {
         reqBody.push(lastChunk);
       }
 
-      reqBody = reqBody.map(function (chunk) {
+      reqBody = reqBody.map(function(chunk) {
         if (!Buffer.isBuffer(chunk)) {
           return new Buffer(chunk);
         } else {
@@ -48,30 +61,20 @@ module.exports.configure = function(options) {
 
       reqBody = Buffer.concat(reqBody);
       var filename = sepiaUtil.constructFilename(options.method, reqUrl,
-                                                  reqBody.toString(), options.headers);
+        reqBody.toString(), options.headers);
 
+      var forceLive = sepiaUtil.shouldForceLive(reqUrl);
 
-      function playback(doneTimeout, resHeaders, resBody) {
-        if (!isAlwaysRecord) {
+      // Only called if either the fixture with the constructed filename
+      // exists, or we're playing back passed in data.
+      function playback(resHeaders, resBody) {
+        if (!forceLive) {
           var headerContent = fs.readFileSync(filename + '.headers');
           resHeaders = JSON.parse(headerContent);
         }
 
-
-        if (emulateTiming && !doneTimeout) {
-
-          var time = resHeaders.time;
-          setTimeout(function () {
-            playback(true);
-          }, time);
-
-          return;
-        }
-
         var socket = new EventEmitter();
-        ['setTimeout', 'setEncoding'].forEach(function (funcName) {
-          socket[funcName] = function () {};
-        });
+        socket.setTimeout = socket.setEncoding = function() {};
         req.socket = socket;
         req.emit('socket', socket);
 
@@ -90,8 +93,8 @@ module.exports.configure = function(options) {
         res.headers = resHeaders.headers || {};
         res.statusCode = resHeaders.statusCode;
 
-        // flesh out the response because the request module expects these
-        // properties to be present
+        // Flesh out the response because the request module expects these
+        // properties to be present.
         res.connection = {
           listeners: function() { return []; },
           once: function() {},
@@ -106,59 +109,63 @@ module.exports.configure = function(options) {
         if (callback) {
           callback(res);
         }
-        if (!isAlwaysRecord) {
+
+        if (!forceLive) {
           resBody = fs.readFileSync(filename);
         }
+
         req.emit('response', res);
         res.emit('data', resBody);
         res.emit('end');
       }
 
-      var isAlwaysRecord = sepiaUtil.isAlwaysRecord(reqUrl);
-
-      //if the file exists and we allow playback (we are not in record only mode)
-      //then playback the call.
-      if (fs.existsSync(filename + '.headers') && (playbackHits && !isAlwaysRecord)) {
+      // If the file exists and we allow playback (e.g. we are not in
+      // record-only mode), then simply play back the call.
+      if (playbackHits && !forceLive && fs.existsSync(filename + '.headers')) {
         playback();
         return;
       }
 
+      // If we are not recording, and the fixtures file does not exist, then
+      // throw an exception.
+      if (!recordMisses && !forceLive) {
+        // But, create a .missing file before throwing the exception.
+        var requestData = {
+          url: reqUrl,
+          method: options.method,
+          headers: options.headers,
+          body: reqBody.toString()
+        };
 
-      //if we are not recording and the fixtures does not exist, then throw an exception
-      if (!(recordMisses || isAlwaysRecord)) {
-        if (createMissingFiles) {
-          var requestData = {
-            url: reqUrl,
-            method: options.method,
-            headers: options.headers,
-            body: reqBody.toString()
-          }
-          fs.writeFileSync(filename + '.missing', JSON.stringify(requestData, null, 2));
-        }
+        fs.writeFileSync(filename + '.missing',
+          JSON.stringify(requestData, null, 2));
+
         throw new Error('Fixture ' + filename + ' not found.');
       }
 
-      //Remember how long it took to perform this action.
-      var startTime = new Date().getTime();
+      // Remember how long it took to perform this action.
+      var startTime = Date.now();
       var timedOut = false;
 
-
       function writeHeaderFile(headers) {
-        var timeLength = new Date().getTime() - startTime;
+        var timeLength = Date.now() - startTime;
         headers.url = reqUrl;
         headers.time = timeLength;
         headers.request = {
-            method: options.method,
-            headers: options.headers
-          }
-        fs.writeFileSync(filename + '.headers', JSON.stringify(headers, null, 2));
+          method: options.method,
+          headers: options.headers
+        };
+
+        fs.writeFileSync(filename + '.headers',
+          JSON.stringify(headers, null, 2));
       }
 
-      // Write the header file with a timeout first then update with the real value.
-      // Otherwise if this times out after a few seconds, and the request stops waiting
-      // and the recording is over, then this will not ever get writen to a file and
-      // on playback the fixture file won't be found.
-      if (!isAlwaysRecord) {
+      // Suppose the request times out while recording. We don't want the
+      // fixtures file to be missing; we want to send back a timeout on
+      // playback. To accomplish this, we write a timeout to the .header file
+      // pre-emptively, then overwrite it with the server response if the
+      // request doesn't time out.
+      if (!forceLive) {
         writeHeaderFile({
           timeout: true,
           time: 30000
@@ -182,41 +189,48 @@ module.exports.configure = function(options) {
 
         res.on('end', function() {
           var resBody = Buffer.concat(resBodyChunks);
-          if (!isAlwaysRecord) {
+
+          if (forceLive) {
+            // Don't write the response to any files, and just send it back to
+            // whoever issued the request.
+            playback({
+              statusCode: res.statusCode,
+              headers: res.headers
+            }, resBody);
+          } else {
             fs.writeFileSync(filename, resBody);
 
             writeHeaderFile({
               statusCode: res.statusCode,
               headers: res.headers
             });
+
             playback();
-          } else {
-            playback(undefined, {
-              statusCode: res.statusCode,
-              headers: res.headers
-            }, resBody);
           }
-
         });
-
       });
-      realReq.on('error', function (error) {
 
+      realReq.on('error', function(error) {
         var header = {
           error: error
         };
+
         if (timedOut) {
           header.timeout = true;
         }
-        if (!isAlwaysRecord) {
+
+        if (forceLive) {
+          // Don't write the error to a file, and just send it back to whoever
+          // issued the request.
+          playback(undefined, header);
+        } else {
           writeHeaderFile(header);
           playback();
-        } else {
-          playback(undefined, header);
         }
       });
-      realReq.on('socket', function (socket) {
-        socket.on('timeout', function () {
+
+      realReq.on('socket', function(socket) {
+        socket.on('timeout', function() {
           timedOut = true;
         });
       });

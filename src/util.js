@@ -109,18 +109,13 @@ function parseHeaderNames(headers) {
   return headerNames.sort();
 }
 
-/**
-/* We only support testName option now. Example: { testName: 'test1' }
- */
 function setTestOptions(options) {
   testOptions = {};
   testOptions.testName = options.testName;
 }
 
 function constructFilename(method, reqUrl, reqBody, reqHeaders) {
-  if (!method) {
-    method = 'GET';
-  }
+  method = method || 'GET';
 
   filenameFilters.forEach(function(filter) {
     if (filter.url.test(reqUrl)) {
@@ -233,7 +228,7 @@ function logSuccess() {
   log('\033[32m', arguments);
 }
 
-function isAlwaysRecord(reqUrl) {
+function shouldForceLive(reqUrl) {
   return alwaysRecordOverrideUrls.some(function(url) {
     return reqUrl.indexOf(url) >= 0;
   });
@@ -251,7 +246,7 @@ module.exports.addAlwaysRecordOverride = addAlwaysRecordOverride;
 module.exports.configure = configure;
 module.exports.logSuccess = logSuccess;
 module.exports.logError = logError;
-module.exports.isAlwaysRecord = isAlwaysRecord;
+module.exports.shouldForceLive = shouldForceLive;
 module.exports.setTestOptions = setTestOptions;
 
 module.exports.internal = {};

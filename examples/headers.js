@@ -1,5 +1,4 @@
 var http = require('http');
-var path = require('path');
 var request = require('request');
 var _ = require('lodash');
 var step = require('step');
@@ -35,29 +34,42 @@ var httpServer = http.createServer(function(req, res) {
 // -- HTTP REQUESTS ------------------------------------------------------------
 
 
-function makeRequests(title, headers1, headers2, next) {
-  function once(headers, cb) {
+function makeRequests(title, headers1, headers2, shouldBeFast1, shouldBeFast2,
+  next) {
+  function once(headers, shouldBeFast, cb) {
     headers.cookie = _.reduce(headers.cookie, function(memo, val, name) {
       memo.push(name + '=' + val);
       return memo;
     }, []).join('; ');
+
+    var start = Date.now();
 
     request({
       url: 'http://localhost:1337',
       method: 'GET',
       headers: headers
     }, function(err, data, body) {
-        console.log(title);
-        console.log('  status :', data.statusCode);
-        console.log('  body   :', body);
+      var time = Date.now() - start;
 
-        cb();
+      console.log(title);
+      console.log('  status :', data.statusCode);
+      console.log('  body   :', body);
+      console.log('  time   :', time);
+
+      if ((shouldBeFast && time > 10) ||
+        (!shouldBeFast && time < 500)) {
+        console.log('\033[1;31mFAIL\033[0m');
+      } else {
+        console.log('\033[1;32mSUCCESS\033[0m');
+      }
+
+      cb();
     });
   }
 
   step(
-    function() { once(headers1, this); },
-    function() { once(headers2, this); },
+    function() { once(headers1, shouldBeFast1, this); },
+    function() { once(headers2, shouldBeFast2, this); },
     function() { console.log(); next(); }
   );
 }
@@ -81,7 +93,7 @@ step(
         C1: 'value7',
         C2: 'value8'
       }
-    }, this);
+    }, false, true, this);
   },
   function() {
     makeRequests('SAME HEADERS + DIFF COOKIES', {
@@ -98,7 +110,7 @@ step(
         C3: 'value7',
         C4: 'value8'
       }
-    }, this);
+    }, true, false, this);
   },
   function() {
     makeRequests('DIFF HEADERS + SAME COOKIES', {
@@ -115,7 +127,7 @@ step(
         C1: 'value7',
         C2: 'value8'
       }
-    }, this);
+    }, true, false, this);
   },
   function() {
     makeRequests('DIFF HEADERS + DIFF COOKIES', {
@@ -132,7 +144,7 @@ step(
         C3: 'value7',
         C4: 'value8'
       }
-    }, this);
+    }, true, false, this);
   },
   function() {
     sepia.configure({
@@ -158,7 +170,7 @@ step(
         C2: 'value11',
         C4: 'value11' // this cookie won't be used to determine the fixture
       }
-    }, this);
+    }, false, true, this);
   },
   _.bind(httpServer.close, httpServer),
   function() { process.exit(0); }

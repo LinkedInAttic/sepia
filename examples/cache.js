@@ -2,7 +2,7 @@ var http = require('http');
 var request = require('request');
 var step = require('step');
 
-var sepia = require('..');
+require('..');
 
 // -- ECHO SERVER --------------------------------------------------------------
 
@@ -16,15 +16,25 @@ var httpServer = http.createServer(function(req, res) {
 
 // -- HTTP REQUESTS ------------------------------------------------------------
 
-function makeRequest(title, next) {
+function makeRequest(title, shouldBeFast, next) {
   var start = Date.now();
   request({
     url: 'http://localhost:1337/'
   }, function(err, data, body) {
+    var time = Date.now() - start;
+
     console.log(title);
     console.log('  status   :', data.statusCode);
     console.log('  body     :', body);
-    console.log('  time (ms):', Date.now() - start);
+    console.log('  time (ms):', time);
+
+    if ((shouldBeFast && time > 10) ||
+      (!shouldBeFast && time < 500)) {
+      console.log('\033[1;31mFAIL\033[0m');
+    } else {
+      console.log('\033[1;32mSUCCESS\033[0m');
+    }
+
     console.log();
 
     next();
@@ -35,8 +45,8 @@ function makeRequest(title, next) {
 
 step(
   function() { setTimeout(this, 100); }, // let the server start up
-  function() { makeRequest('NO FIXTURES' , this); },
-  function() { makeRequest('YES FIXTURES', this); },
+  function() { makeRequest('NO FIXTURES' , false, this); },
+  function() { makeRequest('YES FIXTURES', true , this); },
   httpServer.close.bind(httpServer),
   function() { process.exit(0); }
 );

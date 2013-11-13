@@ -12,6 +12,6 @@
     "should": "2.x"
   },
   "scripts": {
-    "test": "node examples/examples.js"
+    "test": "sh examples/run-all-examples.sh"
   }
 }

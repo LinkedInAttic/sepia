@@ -31,8 +31,8 @@ variable set to the correct value:
 
     cd sepia
     npm install
-    time VCR_MODE=record npm test
-    time VCR_MODE=playback npm test # notice it's much faster!
+    time VCR_MODE=record node examples/examples
+    time VCR_MODE=playback node examples/examples # notice it's much faster!
 
 The example is located in `examples/example.js`. It exercises some of the
 features of the module, and demonstrates that even requests made with the
@@ -41,12 +41,16 @@ features of the module, and demonstrates that even requests made with the
     cd sepia
     npm install
     rm -r fixtures # in case you had previously generated fixtures
-    VCR_MODE=cache node examples/cache.js
+    VCR_MODE=cache node examples/cache
 
 This example demonstrates the cache mode, which makes a real HTTP request and
 records it if the fixture does not exist, but then reuses the fixture if it
 does exist. Notice that the first call takes about one second, whereas the
 second call finishes quickly.
+
+To run all the examples in the correct modes, run:
+
+    npm test
 
 ## Fixture Data
 
@@ -160,7 +164,7 @@ Note that capitalization does not matter.
 Examples of this functionality can be seen in `examples/headers.js`:
 
     rm -r fixtures # in case you had previously generated fixtures
-    VCR_MODE=cache node examples/headers.js
+    VCR_MODE=cache node examples/headers
 
 ## VCR Cassettes
 
