@@ -9,9 +9,10 @@
     "step": "*",
     "jshint": "*",
     "mocha": "1.x",
-    "should": "2.x"
+    "should": "2.x",
+    "sinon": "1.x"
   },
   "scripts": {
-    "test": "sh examples/run-all-examples.sh"
+    "test": "mocha test && sh examples/run-all-examples.sh"
   }
 }
