@@ -88,6 +88,7 @@ function addFilter(inFilter) {
   filter.urlFilter = inFilter.urlFilter || function(url) { return url; };
   filter.bodyFilter = inFilter.bodyFilter || function(body) { return body; };
   filter.forceLive = inFilter.forceLive || false;
+  filter.global = inFilter.global || false;
 
   globalOptions.filenameFilters.push(filter);
 }
@@ -142,6 +143,12 @@ function touchOnHit(filename) {
   if (fs.existsSync(filename)) {
     fs.utimesSync(filename, now, now);
   }
+}
+
+function usesGlobalFixtures(reqUrl) {
+  return globalOptions.filenameFilters.some(function(filter) {
+    return filter.global && filter.url.test(reqUrl);
+  });
 }
 
 // -- LOGGING ------------------------------------------------------------------
@@ -247,11 +254,14 @@ function gatherFilenameHashParts(method, reqUrl, reqBody, reqHeaders) {
   ];
 }
 
-function constructAndCreateFixtureFolder(reqHeaders) {
+function constructAndCreateFixtureFolder(reqUrl, reqHeaders) {
   var language = reqHeaders && reqHeaders['accept-language'] || '';
   language = language.split(',')[0];
 
-  var testFolder = globalOptions.testOptions.testName || '';
+  var testFolder = '';
+  if (!usesGlobalFixtures(reqUrl) && globalOptions.testOptions.testName) {
+    testFolder = globalOptions.testOptions.testName;
+  }
 
   var folder = path.resolve(globalOptions.filenamePrefix, language,
     testFolder);
@@ -267,7 +277,7 @@ function constructFilename(method, reqUrl, reqBody, reqHeaders) {
   hash.update(JSON.stringify(hashParts));
 
   var filename = hash.digest('hex');
-  var folder = constructAndCreateFixtureFolder(reqHeaders);
+  var folder = constructAndCreateFixtureFolder(reqUrl, reqHeaders);
   var hashFile = path.join(folder, filename).toString();
 
   logFixtureStatus(hashFile, hashParts);
@@ -309,6 +319,7 @@ module.exports.internal = {};
 module.exports.internal.globalOptions = globalOptions;
 module.exports.internal.mkdirpSync = mkdirpSync;
 module.exports.internal.filterByWhitelist = filterByWhitelist;
+module.exports.internal.usesGlobalFixtures = usesGlobalFixtures;
 module.exports.internal.touchOnHit = touchOnHit;
 module.exports.internal.log = log;
 module.exports.internal.logFixtureStatus = logFixtureStatus;

@@ -21,12 +21,14 @@ describe('utils.js', function() {
         bodyFilter: function(body) {
           return 'body-filtered: ' + body;
         },
-        forceLive: true
+        forceLive: true,
+        global: true
       });
 
       var filters = sepiaUtil.internal.globalOptions.filenameFilters;
       filters[0].url.source.should.equal('my-regex');
       filters[0].forceLive.should.equal(true);
+      filters[0].global.should.equal(true);
       filters[0].urlFilter('my-url').should.equal('url-filtered: my-url');
       filters[0].bodyFilter('my-body').should.equal('body-filtered: my-body');
     });
@@ -43,7 +45,8 @@ describe('utils.js', function() {
         'url',
         'urlFilter',
         'bodyFilter',
-        'forceLive'
+        'forceLive',
+        'global'
       ]);
     });
 
@@ -53,6 +56,7 @@ describe('utils.js', function() {
       var filters = sepiaUtil.internal.globalOptions.filenameFilters;
       filters[0].url.source.should.equal('.*');
       filters[0].forceLive.should.equal(false);
+      filters[0].global.should.equal(false);
       filters[0].urlFilter('my-url').should.equal('my-url');
       filters[0].bodyFilter('my-body').should.equal('my-body');
     });
@@ -96,6 +100,54 @@ describe('utils.js', function() {
     it('only retains elements present in the whitelist', function() {
       var filtered = filterByWhitelist(original, ['a', 'c', 'd']);
       filtered.should.eql(['a', 'c']);
+    });
+  });
+
+  describe('#usesGlobalFixtures', function() {
+    const usesGlobalFixtures = sepiaUtil.internal.usesGlobalFixtures;
+
+    it('returns false if there are no filters', function() {
+      usesGlobalFixtures('my-url').should.equal(false);
+    });
+
+    it('returns false if there are no matching filters', function() {
+      sepiaUtil.addFilter({
+        url: /other-url/,
+        global: true
+      });
+
+      sepiaUtil.addFilter({
+        url: /another-url/,
+        global: true
+      });
+
+      usesGlobalFixtures('my-url').should.equal(false);
+    });
+
+    it('returns false if no matching filters specify global', function() {
+      sepiaUtil.addFilter({ url: /my/ });
+      sepiaUtil.addFilter({ url: /url/ });
+
+      usesGlobalFixtures('my-url').should.equal(false);
+    });
+
+    it('returns true if any matching filter specifies global', function() {
+      sepiaUtil.addFilter({
+        url: /my/,
+        global: false
+      });
+
+      sepiaUtil.addFilter({
+        url: /url/,
+        global: true
+      });
+
+      sepiaUtil.addFilter({
+        url: /my-url/,
+        global: false
+      });
+
+      usesGlobalFixtures('my-url').should.equal(true);
     });
   });
 
@@ -490,18 +542,34 @@ describe('utils.js', function() {
       sepiaUtil.setFixtureDir('/global/fixture/dir');
       sepiaUtil.setTestOptions({ testName: 'test/name' });
 
-      var folder = constructAndCreateFixtureFolder({
+      var folder = constructAndCreateFixtureFolder('my-url', {
         'accept-language': 'en-US'
       });
 
       folder.should.equal('/global/fixture/dir/en-US/test/name');
     });
 
+    it('ignores the test name if it should use global fixtures', function() {
+      sepiaUtil.setFixtureDir('/global/fixture/dir');
+      sepiaUtil.setTestOptions({ testName: 'test/name' });
+
+      sepiaUtil.addFilter({
+        url: /my-url/,
+        global: true
+      });
+
+      var folder = constructAndCreateFixtureFolder('my-url', {
+        'accept-language': 'en-US'
+      });
+
+      folder.should.equal('/global/fixture/dir/en-US');
+    });
+
     it('picks out the first entry in the accept-language header', function() {
       sepiaUtil.setFixtureDir('/global/fixture/dir');
       sepiaUtil.setTestOptions({ testName: 'test/name' });
 
-      var folder = constructAndCreateFixtureFolder({
+      var folder = constructAndCreateFixtureFolder('my-url', {
         'accept-language': 'de-DE,en-US'
       });
 
@@ -511,7 +579,7 @@ describe('utils.js', function() {
     it('gracefully handles no test name', function() {
       sepiaUtil.setFixtureDir('/global/fixture/dir');
 
-      var folder = constructAndCreateFixtureFolder({
+      var folder = constructAndCreateFixtureFolder('my-url', {
         'accept-language': 'en-US'
       });
 
@@ -523,13 +591,13 @@ describe('utils.js', function() {
         sepiaUtil.setFixtureDir('/global/fixture/dir');
         sepiaUtil.setTestOptions({ testName: 'test/name' });
 
-        var folder = constructAndCreateFixtureFolder();
+        var folder = constructAndCreateFixtureFolder('my-url');
         folder.should.equal('/global/fixture/dir/test/name');
 
-        folder = constructAndCreateFixtureFolder({});
+        folder = constructAndCreateFixtureFolder('my-url', {});
         folder.should.equal('/global/fixture/dir/test/name');
 
-        folder = constructAndCreateFixtureFolder({
+        folder = constructAndCreateFixtureFolder('my-url', {
           'accept-language': ''
         });
         folder.should.equal('/global/fixture/dir/test/name');
@@ -539,7 +607,7 @@ describe('utils.js', function() {
       sepiaUtil.setFixtureDir('global/fixture/dir');
       sepiaUtil.setTestOptions({ testName: 'test/name' });
 
-      var folder = constructAndCreateFixtureFolder({
+      var folder = constructAndCreateFixtureFolder('my-url', {
         'accept-language': 'en-US'
       });
 

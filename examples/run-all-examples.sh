@@ -14,3 +14,6 @@ VCR_MODE=cache node examples/headers
 
 rm -r fixtures/
 VCR_MODE=cache node examples/forceLive
+
+rm -r fixtures/
+VCR_MODE=cache node examples/testName
