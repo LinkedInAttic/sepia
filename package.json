@@ -13,6 +13,6 @@
     "sinon": "1.x"
   },
   "scripts": {
-    "test": "mocha test && sh examples/run-all-examples.sh"
+    "test": "jshint --config .jshintrc index.js src test examples && mocha test && sh examples/run-all-examples.sh"
   }
 }

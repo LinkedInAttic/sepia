@@ -1,12 +1,30 @@
+/**
+ * -- FORCE LIVE ---------------------------------------------------------------
+ *
+ * rm -r fixtures
+ * VCR_MODE=cache node examples/forceLive
+ *
+ * Demonstrates the ability to have certain requests bypass the fixture system
+ * and hit the live downstream servers, regardless of the VCR_MODE.
+ *
+ * There are two sets of requests made, each time with two requests. The first
+ * set is to a URL that is configured to be live, and thus the two requests
+ * don't encounter a cache hit. The second set is to a URL that is not
+ * configured to be live, and thus the two requests do encounter a cache hit.
+ */
+
 var http = require('http');
-var path = require('path');
 var request = require('request');
 var _ = require('lodash');
+require('should');
 var step = require('step');
+var common = require('./common');
 
 var sepia = require('..');
 
 // -- ECHO SERVER --------------------------------------------------------------
+
+// 1. Returns a random number.
 
 var httpServer = http.createServer(function(req, res) {
   // simulate server latency
@@ -16,33 +34,35 @@ var httpServer = http.createServer(function(req, res) {
   }, 500);
 }).listen(1337, '0.0.0.0');
 
-// -- LOGGING ------------------------------------------------------------------
-
-function logTime(shouldBeFast, start) {
-  var time = Date.now() - start;
-  console.log('  time   :', time);
-
-  if ((shouldBeFast && time > 10) ||
-    (!shouldBeFast && time < 500)) {
-    console.log('\033[1;31mFAIL\033[0m');
-  } else {
-    console.log('\033[1;32mSUCCESS\033[0m');
-  }
-}
-
 // -- HTTP REQUESTS ------------------------------------------------------------
 
 function liveRequests(next) {
+  var firstBody;
+
   function once(cb) {
     var start = Date.now();
 
     request({
       url: 'http://localhost:1337/randomLive/'
     }, function(err, data, body) {
+      var time = Date.now() - start;
+
       console.log('LIVE REQUEST');
-      console.log('  status :', data.statusCode);
-      console.log('  body   :', body);
-      logTime(false, start);
+      console.log('  status:', data.statusCode);
+      console.log('  body  :', body);
+      console.log('  time  :', time);
+
+      common.verify(function() {
+        if (firstBody) {
+          // ...technically, the two requests could return the same number, but
+          // that would be exceedingly rare...
+          body.should.not.equal(firstBody);
+        } else {
+          firstBody = body;
+        }
+
+        common.shouldBeSlow(time);
+      });
 
       cb();
     });
@@ -56,28 +76,40 @@ function liveRequests(next) {
 }
 
 function cachedRequests(next) {
-  var shouldBeFast = false;
+  var firstBody;
 
-  function once(cb) {
+  function once(cacheHitExpected, cb) {
     var start = Date.now();
 
     request({
       url: 'http://localhost:1337/randomCached/'
     }, function(err, data, body) {
-      console.log('CACHEABLE REQUEST');
-      console.log('  status :', data.statusCode);
-      console.log('  body   :', body);
-      logTime(shouldBeFast, start);
+      var time = Date.now() - start;
 
-      shouldBeFast = true;
+      console.log('CACHEABLE REQUEST');
+      console.log('  status:', data.statusCode);
+      console.log('  body  :', body);
+      console.log('  time  :', time);
+
+      common.verify(function() {
+        if (firstBody) {
+          // ...technically, the two requests could return the same number, but
+          // that would be exceedingly rare...
+          body.should.equal(firstBody);
+        } else {
+          firstBody = body;
+        }
+
+        common.shouldUseCache(cacheHitExpected, time);
+      });
 
       cb();
     });
   }
 
   step(
-    function() { once(this); },
-    function() { once(this); },
+    function() { once(false, this); },
+    function() { once(true, this); },
     function() { console.log(); next(); }
   );
 }

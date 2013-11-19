@@ -1,6 +1,18 @@
+/**
+ * -- CACHE --------------------------------------------------------------------
+ *
+ * rm -r fixtures
+ * VCR_MODE=cache node examples/cache
+ *
+ * Exercise the cache mode by making an HTTP request without any fixtures, then
+ * re-making that request. The request should take substantially less time the
+ * second time, since the fixture will be created by the first call.
+ */
+
 var http = require('http');
 var request = require('request');
 var step = require('step');
+var common = require('./common');
 
 require('..');
 
@@ -16,24 +28,22 @@ var httpServer = http.createServer(function(req, res) {
 
 // -- HTTP REQUESTS ------------------------------------------------------------
 
-function makeRequest(title, shouldBeFast, next) {
+function makeRequest(title, cacheHitExpected, next) {
   var start = Date.now();
+
   request({
     url: 'http://localhost:1337/'
   }, function(err, data, body) {
     var time = Date.now() - start;
 
     console.log(title);
-    console.log('  status   :', data.statusCode);
-    console.log('  body     :', body);
-    console.log('  time (ms):', time);
+    console.log('  status:', data.statusCode);
+    console.log('  body  :', body);
+    console.log('  time  :', time);
 
-    if ((shouldBeFast && time > 10) ||
-      (!shouldBeFast && time < 500)) {
-      console.log('\033[1;31mFAIL\033[0m');
-    } else {
-      console.log('\033[1;32mSUCCESS\033[0m');
-    }
+    common.verify(function() {
+      common.shouldUseCache(cacheHitExpected, time);
+    });
 
     console.log();
 

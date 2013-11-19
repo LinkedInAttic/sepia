@@ -22,14 +22,17 @@
  */
 
 var http = require('http');
-var path = require('path');
 var request = require('request');
 var _ = require('lodash');
 var step = require('step');
+require('should');
+var common = require('./common');
 
 var sepia = require('..');
 
 // -- ECHO SERVER --------------------------------------------------------------
+
+// 1. Returns a random number.
 
 var httpServer = http.createServer(function(req, res) {
   // simulate server latency
@@ -38,20 +41,6 @@ var httpServer = http.createServer(function(req, res) {
     res.end(Math.random().toString());
   }, 500);
 }).listen(1337, '0.0.0.0');
-
-// -- LOGGING ------------------------------------------------------------------
-
-function logTime(shouldBeFast, start) {
-  var time = Date.now() - start;
-  console.log('  time   :', time);
-
-  if ((shouldBeFast && time > 10) ||
-    (!shouldBeFast && time < 500)) {
-    console.log('\033[1;31mFAIL\033[0m');
-  } else {
-    console.log('\033[1;32mSUCCESS\033[0m');
-  }
-}
 
 // -- HTTP REQUESTS ------------------------------------------------------------
 
@@ -62,42 +51,55 @@ function setTestName(name, next) {
     json: {
       testName: name
     }
-  }, function(err, data, body) {
+  }, function(err, data) {
     console.log('SETTING TEST NAME TO', name);
     console.log('  status :', data.statusCode);
-    console.log('  body   :', body);
     console.log();
 
     next();
   });
 }
 
-function globalRequest(shouldBeFast, next) {
+function globalRequest(cacheHitExpected, next) {
   var start = Date.now();
 
   request({
     url: 'http://localhost:1337/global'
   }, function(err, data, body) {
+    var time = Date.now() - start;
+
     console.log('GLOBAL REQUEST');
-    console.log('  status :', data.statusCode);
-    console.log('  body   :', body);
-    logTime(shouldBeFast, start);
+    console.log('  status:', data.statusCode);
+    console.log('  body  :', body);
+    console.log('  time  :', time);
+
+    common.verify(function() {
+      common.shouldUseCache(cacheHitExpected, time);
+    });
+
     console.log();
 
     next();
   });
 }
 
-function localRequest(shouldBeFast, next) {
+function localRequest(next) {
   var start = Date.now();
 
   request({
     url: 'http://localhost:1337/local'
   }, function(err, data, body) {
+    var time = Date.now() - start;
+
     console.log('LOCAL REQUEST');
-    console.log('  status :', data.statusCode);
-    console.log('  body   :', body);
-    logTime(shouldBeFast, start);
+    console.log('  status:', data.statusCode);
+    console.log('  body  :', body);
+    console.log('  time  :', time);
+
+    common.verify(function() {
+      common.shouldBeSlow(time);
+    });
+
     console.log();
 
     next();
@@ -122,10 +124,10 @@ step(
   function() { setTimeout(this, 100); }, // let the server start up
   function() { setTestName('test1', this); },
   function() { globalRequest(false, this); },
-  function() { localRequest(false, this); },
+  function() { localRequest(this); },
   function() { setTestName('test2', this); },
   function() { globalRequest(true, this); },
-  function() { localRequest(false, this); },
+  function() { localRequest(this); },
   _.bind(httpServer.close, httpServer),
   function() { process.exit(0); }
 );
