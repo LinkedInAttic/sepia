@@ -1,13 +1,20 @@
-# sepia
+# sepia - the way things used to be
 
-Sepia is a VCR-like module for node.js that records HTTP interactions, and
+Sepia is a VCR-like module for node.js that records HTTP interactions, then
 plays them back exactly like the first time they were invoked. Sepia was
 created to isolate a server from its remote downstream dependencies, for speed
 and fault-tolerence.
 
-Sepia works with any HTTP library in node.js that uses `http#request` and
-`https#request`, including [the `request`
-module](https://github.com/mikeal/request).
+Sepia should work with any HTTP library in node.js that uses `http#request` and
+`https#request`, though in practice, it has only been tested against [the
+`request` module](https://github.com/mikeal/request).
+
+Sepia was developed and is in use at LinkedIn since early 2013. There, it is
+used to improve the speed and reliability of the integration test suite for the
+node.js server powering the mobile applications.
+
+https://github.com/avik-das/sepia  
+https://npmjs.org/package/sepia
 
 ## Quick Start
 
@@ -27,16 +34,15 @@ variable set to the correct value:
     VCR_MODE=playback npm start # sepia, in playback mode
     VCR_MODE=cache npm start    # sepia, in cache mode
 
-## Examples
+## Running the examples
 
-    cd sepia
+    cd sepia # wherever you installed the module
     npm install
-    time VCR_MODE=record node examples/examples
-    time VCR_MODE=playback node examples/examples # notice it's much faster!
+    time VCR_MODE=record   node examples/http
+    time VCR_MODE=playback node examples/http # notice it's much faster!
 
-The example is located in `examples/example.js`. It exercises some of the
-features of the module, and demonstrates that even requests made with the
-`request` module are intercepted properly.
+The example is located in `examples/http.js`. It exercises the core
+functionality of the module.
 
     cd sepia
     npm install
@@ -52,16 +58,76 @@ To run all the examples in the correct modes, run:
 
     npm test
 
+## Motivation
+
+<img src="architecture-diagram-1.png" alt="" height="200" width="450" align="center" />
+
+Sepia was created for the following use case:
+
+* Integration tests are being run against a node.js server under test.
+* The server under test makes HTTP requests to external downstream services.
+* The integration tests are driven by a client running in a separate process
+  than the server.
+
+Even though the server is the system being tested, the stability of the
+integration tests depends on the reliability of the downstream services.
+Additionally, making HTTP calls to live downstream services makes the
+integration tests very slow. To combat this, sepia hooks into the node.js
+`http` and `https` modules inside the server process, intercepting outgoing
+HTTP(S) requests. Sepia, records these requests, then plays them back the next
+time the requests are made.
+
+## VCR Modes
+
+The value of the `VCR_MODE` environment variable determines how sepia behaves.
+Acceptable values are:
+
+* `record`: Make the downstream request, then save it to a fixture file.
+* `playback`: Don't make the downstream request. Attempt to retrieve the data
+  from the corresponding fixture file, and throw an error if the file does not
+  exist.
+* `cache`: First try to locate the fixture and play it back. If the fixture
+  file does not exist, make the downstream request and save it to the file.
+
+## Fixture Filenames
+
+Fixture data generated during the recording phase are stored in files. In order
+to uniquely associate each HTTP request with a filename used to store the
+fixture data, several characteristics of the request are examined:
+
+* The HTTP method, e.g. `GET` or `POST`.
+* The request URL.
+* The request body.
+* The names of all the request headers.
+* The names of all the cookies sent in the request.
+
+This data is then aggregated and sent through an MD5 hash to produce the
+filename. Users of sepia can hook into this process of constructing the
+filename, as explained in a subsequent sections.
+
+This core functionality is exercised in `examples/http.js` and
+`examples/request.js`:
+
+    time VCR_MODE=record   node examples/http
+    time VCR_MODE=playback node examples/http
+
+    time VCR_MODE=record   node examples/request
+    time VCR_MODE=playback node examples/request
+
 ## Fixture Data
 
-Fixture data generated during the recording phase are stored in files. By
-default, the files are stored in `fixtures/generated` under the directory in
+By default, the files are stored in `fixtures/generated` under the directory in
 which the application was started. To override this:
 
     var sepia = require('sepia');
     sepia.fixtureDir(path.join(process.cwd(), 'sepia-fixtures'));
 
 If this directory doesn't exist, it will be created.
+
+This functionality is exercised in `examples/fixtureDir`:
+
+    VCR_MODE=record   node examples/fixtureDir
+    VCR_MODE=playback node examples/fixtureDir
 
 ## Configure
 
@@ -82,18 +148,16 @@ The full list of options are as follows:
 
 ## URL and Body Filtering
 
-When determining which fixture file to record to, or read from during
-playback, a filename is generated using each HTTP(S) request's URL, and the
-request body, if present. The latter is used to differentiate between two POST
-or PUT requests pointing to the same URL but differing only in the request
-body.
+Both the URL and the request body, if present, are used to generate the
+filename for fixtures. The latter is used to differentiate between two POST or
+PUT requests pointing to the same URL but differing only in the request body.
 
 Sometimes, a request contains data in the URL or the body that is necessary for
 the successful execution of that request, but changes from repeated invocations
 of that resource. One typical example is a timestamp; another is a uniquely
-generated request ID. However, two requests that have all other parts of the
-request aside from these parameters constant, the two requests should be
-considered the same for recording and playback purposes.
+generated request ID. However, sometimes two requests that have all other parts
+of the request aside from these parameters constant should be considered the
+same for recording and playback purposes.
 
 To this end, a URL and body filtering functionality is provided. Suppose that
 your tests make the following request:
@@ -121,7 +185,14 @@ The filter specification can also contain a `bodyFilter` function that operates
 on the request body. Either `urlFilter` or `bodyFilter` may be specified.
 
 Multiple calls to `sepia#filter` may be made. All matching filters are applied
-in the order they are specified.
+in the order they are specified. The `url` property of the filter is used to
+match the unmodified URL, regardless of the transformations it undergoes due to
+matching `urlFilter` functions.
+
+An example of this functionality can be found in `examples/filters`:
+
+    VCR_MODE=record   node examples/filters
+    VCR_MODE=playback node examples/filters
 
 ## Headers and Cookies
 
@@ -152,7 +223,6 @@ strings in it, only the corresponding headers or cookies will be used to
 construct the filename. Either whitelist can be specified in isolation or both
 may be specified:
 
-
     var sepia = require('sepia');
     sepia.configure({
       headerWhitelist: ['upgrade', 'via', 'x-custom'],
@@ -166,17 +236,43 @@ Examples of this functionality can be seen in `examples/headers.js`:
     rm -r fixtures # in case you had previously generated fixtures
     VCR_MODE=cache node examples/headers
 
+## Languages
+
+A downstream request may return different data based on the language requested
+by the server under test. To support this use case, sepia automatically
+isolates fixtures based on the value of the `Accept-Language` request header.
+
+The first language in the list of languages specified by this header is used as
+the directory name into which the fixtures will be placed for that request.
+This directory is placed under the configured fixture directory. If no
+languages are specified, either due to an empty value or due to the header not
+being present in the first place, the fixtures will be placed directly into the
+configured fixture directory.
+
+Examples of this functionality can be seen in `examples/languages.js`:
+
+    rm -r fixtures # in case you had previously generated fixtures
+    VCR_MODE=record   node examples/languages
+    VCR_MODE=playback node examples/languages
+
 ## VCR Cassettes
 
 A series of downstream requests can be isolated, and their fixtures stored in a
 separate directory, using sepia.fixtureDir(). However, this requires that the
-grouping happens in the same process as the one running sepia. Imagine,
-however, running a test against a server in a completely different process.
+grouping happens in the same process as the one running sepia. In the
+motivating example given at the beginning of this document, the integration
+test driver runs in a completely different process than the server managed by
+sepia.
 
 To help manage the sepia instance in a separate process, sepia itself starts up
 an embedded HTTP server in the process where it replaces the HTTP request
 functions. The test process can then communicate with this HTTP server and set
-options, namely the directory into which fixtures will go. This can be used to
+options, namely the directory into which fixtures will go. This architecture is
+is visualized as follows:
+
+<img src="architecture-diagram-2.png" alt="" height="210" width="450" align="center" />
+
+This can be used to
 emulate "cassette"-like functionality:
 
     // suppose the process that is running sepia is bound to port 8080
@@ -201,6 +297,28 @@ Currently, the port of the embedded server is hard-coded to be `58080`, but
 this will be configurable in the future. Furthermore, only the "test name" can
 be set, but more options may become available.
 
+An example of this functionality can be seen in `examples/testName.js`:
+
+    rm -r fixtures # in case you had previously generated fixtures
+    VCR_MODE=cache node examples/testName
+
+### Bypassing the Cassette
+
+When isolating a group of fixtures into a separate directory, it is sometimes
+useful to specify a single fixture as "global," that is living outside the
+test-specific directory and shared by multiple tests. To achieve this, a filter
+can be added:
+
+    var sepia = require('sepia');
+    sepia.filter({
+      url: /my-global-resource/,
+      global: true
+    });
+
+Now, all requests whose URLs match `/my-global-resource/` will be placed in
+the root of the configured `fixtureDir`, regardless of what the current test
+name is.
+
 ## Limitations
 
 ### Repeated Identical HTTP Requests
@@ -211,20 +329,29 @@ when, for example, a resources is fetched using a `GET` request, it is
 modified using a `PUT` request, and it is fetched once more using a `GET`
 request to verify that it was updated successfully.
 
-The Ruby implementation of [VCR](https://github.com/vcr/vcr) uses the concept
-of a cassette. This concept does not apply here because sepia may run in a
-completely separate process from the tests. The only way around this currently
-is to actually make the requests different in some way.
+While you can use the test name functionality described above, it may not be
+semantically valid to spread fixtures for the same test under multiple
+directories. One way around this currently is to actually make the requests
+different in some way.
 
-For example, in an integration test scenario, you may be able to pass the name
-of a test and a number (e.g. `testUpdate1` and `testUpdate2`) along with each
+For example, in an integration test scenario, you may be able to pass a unique
+identifier (e.g. `testUpdate1` and `testUpdate2`) along with each
 request made from the test. Typically, this would be passed as a query
-parameter that would be ignored by the remote server.
+parameter that would be passed along by the server under test to any downstream
+services, which would then ignore this parameter.
 
 ## Technical Details
 
-Sepia inspects the `VCR_MODE` environment variable. In record mode, sepia wraps
-around `http#request` and `https#request` in order to trap the outgoing request
-and the incoming response. These are then saved in a set of files. In playback
-mode, the two request functions are overwritten completely, and it returns
-dummy objects that read from the pre-recorded fixtures.
+Sepia wraps around the `http#request` and the `https#request` functions. Each
+outgoing request is trapped. Depending on the value of the `VCR_MODE`
+environment variable, the request is either made and stored in a file, or the
+data is retrieved from a file and sent back using a dummy response object.
+
+## Contributors
+
+* [Vlad Shlosberg](https://github.com/vshlos)
+* [Ethan Goldblum](https://github.com/egoldblum)
+* [Shao-Hua Kao](https://github.com/ethankao)
+* [Deepank Gupta](https://github.com/deepankgupta)
+* [Priyanka Salvi](http://www.linkedin.com/in/coolsmartgalpriyankanew)
+* [Ashima Atul](https://github.com/ashimaatul)
