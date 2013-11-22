@@ -1,18 +1,37 @@
 {
   "name": "sepia",
-  "author": "Avik Das <adas@linkedin.com>",
+  "author": "Avik Das <avik.das@berkeley.edu>",
   "version": "0.0.1",
   "description": "A VCR-like module that records HTTP interactions and plays them back for speed and reliability",
+  "keywords": ["http", "testing"],
+  "homepage": "https://github.com/avik-das/sepia",
+  "bugs": "https://github.com/avik-das/sepia/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/avik-das/sepia.git"
+  },
+  "license": "BSD",
+  "contributors": [
+    "Vlad Shlosberg (https://github.com/vshlos)",
+    "Ethan Goldblum (https://github.com/egoldblum)",
+    "Shao-Hua Kao (https://github.com/ethankao)",
+    "Deepank Gupta (https://github.com/deepankgupta)",
+    "Priyanka Salvi (http://www.linkedin.com/in/coolsmartgalpriyankanew)",
+    "Ashima Atul (https://github.com/ashimaatul)"
+  ],
   "devDependencies": {
-    "request": "*",
-    "lodash": "*",
-    "step": "*",
-    "jshint": "*",
+    "request": "2.x",
+    "lodash": "2.x",
+    "step": "0.x",
+    "jshint": "2.x",
     "mocha": "1.x",
     "should": "2.x",
     "sinon": "1.x"
   },
   "scripts": {
     "test": "jshint --config .jshintrc index.js src test examples && mocha test && sh examples/run-all-examples.sh"
+  },
+  "engines": {
+    "node": ">=0.8"
   }
 }
