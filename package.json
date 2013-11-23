@@ -10,7 +10,7 @@
     "type": "git",
     "url": "https://github.com/avik-das/sepia.git"
   },
-  "license": "BSD",
+  "license": "Apache",
   "contributors": [
     "Vlad Shlosberg (https://github.com/vshlos)",
     "Ethan Goldblum (https://github.com/egoldblum)",
