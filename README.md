@@ -60,7 +60,7 @@ To run all the examples in the correct modes, run:
 
 ## Motivation
 
-<img src="architecture-diagram-1.png" alt="" height="200" width="450" align="center" />
+<img src="https://raw.github.com/linkedin/sepia/master/architecture-diagram-1.png" alt="" height="200" width="450" align="center" />
 
 Sepia was created for the following use case:
 
@@ -270,7 +270,7 @@ functions. The test process can then communicate with this HTTP server and set
 options, namely the directory into which fixtures will go. This architecture is
 is visualized as follows:
 
-<img src="architecture-diagram-2.png" alt="" height="210" width="450" align="center" />
+<img src="https://raw.github.com/linkedin/sepia/master/architecture-diagram-2.png" alt="" height="210" width="450" align="center" />
 
 This can be used to
 emulate "cassette"-like functionality:
