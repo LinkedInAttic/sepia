@@ -13,7 +13,7 @@ Sepia was developed and is in use at LinkedIn since early 2013. There, it is
 used to improve the speed and reliability of the integration test suite for the
 node.js server powering the mobile applications.
 
-https://github.com/avik-das/sepia  
+https://github.com/linkedin/sepia  
 https://npmjs.org/package/sepia
 
 ## Quick Start
