@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-require('should');
+var should = require('should');
 var sinon = require('sinon');
+var _ = require('lodash');
 
 var sepiaUtil = require('../src/util');
 var fs = require('fs');
@@ -114,6 +115,41 @@ describe('utils.js', function() {
     it('only retains elements present in the whitelist', function() {
       var filtered = filterByWhitelist(original, ['a', 'c', 'd']);
       filtered.should.eql(['a', 'c']);
+    });
+  });
+
+  describe('#removeInternalHeaders', function() {
+    const removeInternalHeaders = sepiaUtil.removeInternalHeaders;
+
+    it('returns undefined if the input is undefined', function() {
+      var filtered = removeInternalHeaders();
+      should.not.exist(filtered);
+    });
+
+    it('filters out only internal headers', function() {
+      var filtered = removeInternalHeaders({
+        a: 1,
+        'x-sepia-internal': 2,
+        b: 3
+      });
+
+      filtered.should.eql({
+        a: 1,
+        b: 3
+      });
+    });
+
+    it('does not modify the original object', function() {
+      var original = {
+        a: 1,
+        'x-sepia-internal': 2,
+        b: 3
+      };
+
+      var input = _.cloneDeep(original);
+
+      removeInternalHeaders(input);
+      input.should.eql(original);
     });
   });
 
@@ -429,6 +465,14 @@ describe('utils.js', function() {
         a: 3
       }).should.eql(['a', 'b']);
     });
+
+    it('filters out sepia headers', function() {
+      parseHeaderNames({
+        b: 1,
+        'x-sepia-internal-header': 2,
+        a: 3
+      }).should.eql(['a', 'b']);
+    });
   });
 
   describe('#gatherFilenameHashParts', function() {
@@ -558,6 +602,30 @@ describe('utils.js', function() {
 
       var folder = constructAndCreateFixtureFolder('my-url', {
         'accept-language': 'en-US'
+      });
+
+      folder.should.equal('/global/fixture/dir/en-US/test/name');
+    });
+
+    it('uses the "x-sepia-test-name" header as the test name', function() {
+      sepiaUtil.setFixtureDir('/global/fixture/dir');
+      // don't set the test name globally
+
+      var folder = constructAndCreateFixtureFolder('my-url', {
+        'accept-language': 'en-US',
+        'x-sepia-test-name': 'test/name'
+      });
+
+      folder.should.equal('/global/fixture/dir/en-US/test/name');
+    });
+
+    it('favors the "x-sepia-test-name" header as the test name', function() {
+      sepiaUtil.setFixtureDir('/global/fixture/dir');
+      sepiaUtil.setTestOptions({ testName: 'global/test/name' });
+
+      var folder = constructAndCreateFixtureFolder('my-url', {
+        'accept-language': 'en-US',
+        'x-sepia-test-name': 'test/name'
       });
 
       folder.should.equal('/global/fixture/dir/en-US/test/name');
