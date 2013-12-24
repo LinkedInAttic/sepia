@@ -77,6 +77,8 @@ module.exports.configure = function(mode) {
       var filename = sepiaUtil.constructFilename(options.method, reqUrl,
         reqBody.toString(), options.headers);
 
+      options.headers = sepiaUtil.removeInternalHeaders(options.headers);
+
       var forceLive = sepiaUtil.shouldForceLive(reqUrl);
 
       // Only called if either the fixture with the constructed filename

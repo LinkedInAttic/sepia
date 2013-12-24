@@ -129,6 +129,22 @@ function filterByWhitelist(list, whitelist) {
   });
 }
 
+function removeInternalHeaders(headers) {
+  if (!headers) {
+    return;
+  }
+
+  var filtered = {};
+
+  for (var key in headers) {
+    if (key.indexOf('x-sepia-') !== 0) {
+      filtered[key] = headers[key];
+    }
+  }
+
+  return filtered;
+}
+
 function applyMatchingFilters(reqUrl, reqBody) {
   var filteredUrl = reqUrl;
   var filteredBody = reqBody;
@@ -228,6 +244,8 @@ function parseCookiesNames(cookieValue) {
 }
 
 function parseHeaderNames(headers) {
+  headers = removeInternalHeaders(headers);
+
   var headerNames = [];
   for (var name in headers) {
     if (headers.hasOwnProperty(name)) {
@@ -269,12 +287,18 @@ function gatherFilenameHashParts(method, reqUrl, reqBody, reqHeaders) {
 }
 
 function constructAndCreateFixtureFolder(reqUrl, reqHeaders) {
-  var language = reqHeaders && reqHeaders['accept-language'] || '';
+  reqHeaders = reqHeaders || {};
+
+  var language = reqHeaders['accept-language'] || '';
   language = language.split(',')[0];
 
   var testFolder = '';
-  if (!usesGlobalFixtures(reqUrl) && globalOptions.testOptions.testName) {
-    testFolder = globalOptions.testOptions.testName;
+  if (!usesGlobalFixtures(reqUrl)){
+    if (reqHeaders['x-sepia-test-name']) {
+      testFolder = reqHeaders['x-sepia-test-name'];
+    } else if (globalOptions.testOptions.testName) {
+      testFolder = globalOptions.testOptions.testName;
+    }
   }
 
   var folder = path.resolve(globalOptions.filenamePrefix, language,
@@ -328,6 +352,7 @@ module.exports.addFilter = addFilter;
 module.exports.constructFilename = constructFilename;
 module.exports.urlFromHttpRequestOptions = urlFromHttpRequestOptions;
 module.exports.shouldForceLive = shouldForceLive;
+module.exports.removeInternalHeaders = removeInternalHeaders;
 
 module.exports.internal = {};
 module.exports.internal.globalOptions = globalOptions;

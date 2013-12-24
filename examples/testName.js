@@ -49,9 +49,21 @@ var sepia = require('..');
 // 1. Returns a random number.
 
 var httpServer = http.createServer(function(req, res) {
+  var headers = {
+    'Content-type': 'text/plain'
+  };
+
+  // One piece of functionality being tested is the use of the
+  // x-sepia-test-name header, which is not meant to be passed along to
+  // downstream services. For that reason, we pass that header back to the
+  // client so that it can test the absence of the header.
+  if (req.headers['x-sepia-test-name']) {
+    headers['x-sepia-test-name'] = req.headers['x-sepia-test-name'];
+  }
+
   // simulate server latency
   setTimeout(function() {
-    res.writeHead(200, { 'Content-type': 'text/plain' });
+    res.writeHead(200, headers);
     res.end(Math.random().toString());
   }, 500);
 }).listen(1337, '0.0.0.0');
@@ -120,6 +132,33 @@ function localRequest(next) {
   });
 }
 
+function requestWithHeader(testName, cacheHitExpected, next) {
+  var start = Date.now();
+
+  request({
+    url: 'http://localhost:1337/local',
+    headers: {
+      'x-sepia-test-name': testName
+    }
+  }, function(err, data, body) {
+    var time = Date.now() - start;
+
+    console.log('LOCAL REQUEST');
+    console.log('  status:', data.statusCode);
+    console.log('  body  :', body);
+    console.log('  time  :', time);
+
+    common.verify(function() {
+      common.shouldUseCache(cacheHitExpected, time);
+      data.headers.should.not.have.property('x-sepia-test-name');
+    });
+
+    console.log();
+
+    next();
+  });
+}
+
 // -- RUN EVERYTHING -----------------------------------------------------------
 
 // To change the test name, we have to be able to access the live server,
@@ -142,6 +181,9 @@ step(
   function() { setTestName('test2', this); },
   function() { globalRequest(true, this); },
   function() { localRequest(this); },
+  function() { requestWithHeader('test1', true, this); },
+  function() { requestWithHeader('test3', false, this); },
+  function() { requestWithHeader('test3', true, this); },
   _.bind(httpServer.close, httpServer),
   function() { process.exit(0); }
 );

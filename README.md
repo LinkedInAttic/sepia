@@ -319,6 +319,25 @@ Now, all requests whose URLs match `/my-global-resource/` will be placed in
 the root of the configured `fixtureDir`, regardless of what the current test
 name is.
 
+### Cassettes Without Modifying Global State
+
+The above approach to VCR cassettes modifies global state in the server managed
+by sepia. This prevents running multiple tests--with different test names--in
+parallel, because the nature of the global state is such that only one test
+name can be set at one time. If you're willing to pass along information from
+an incoming request down to a downstream request, sepia provides a stateless
+alternative: the `x-sepia-test-name` header.
+
+The `x-sepia-test-name` header, when passed to a downstream request, will
+override the globally-configured test name. The header itself is not passed to
+any downstream service, nor is the header name used in the calculation of the
+fixture name.
+
+The downside is that the server under test must pass along information from the
+test integration runner to each of its downstream requests, because otherwise,
+sepia has no means of determining the associated test name for a particular
+dowstream request.
+
 ## Limitations
 
 ### Repeated Identical HTTP Requests
