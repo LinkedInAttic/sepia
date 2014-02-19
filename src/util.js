@@ -327,12 +327,17 @@ function constructFilename(method, reqUrl, reqBody, reqHeaders) {
 // -- CONVENIENCE FUNCTIONS ----------------------------------------------------
 
 function urlFromHttpRequestOptions(options, protocol) {
+  var parsedPath = options.path.split('?');
+  var pathname = parsedPath.shift();
+  var search = parsedPath.join('?');
+
   var urlOptions = {
     protocol: protocol,
     hostname: options.hostname || options.host,
     auth: options.auth,
     port: options.port,
-    pathname: options.path
+    pathname: pathname,
+    search: search
   };
 
   return url.format(urlOptions);

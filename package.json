@@ -1,9 +1,12 @@
 {
   "name": "sepia",
   "author": "Avik Das <avik.das@berkeley.edu>",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A VCR-like module that records HTTP interactions and plays them back for speed and reliability",
-  "keywords": ["http", "testing"],
+  "keywords": [
+    "http",
+    "testing"
+  ],
   "homepage": "https://github.com/linkedin/sepia",
   "bugs": "https://github.com/linkedin/sepia/issues",
   "repository": {
