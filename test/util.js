@@ -754,6 +754,16 @@ describe('utils.js', function() {
         'https'
       ).should.equal('https://my-hostname/my/path');
     });
+
+    it('parses ? properly"', function() {
+      urlFromHttpRequestOptions(
+        {
+          host: 'my-hostname',
+          path: '/my/path?foo=bar'
+        },
+        'https'
+      ).should.equal('https://my-hostname/my/path?foo=bar');
+    });
   });
 
   describe('#shouldForceLive', function() {
