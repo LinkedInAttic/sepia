@@ -15,6 +15,8 @@
 var should = require('should');
 var sinon = require('sinon');
 var _ = require('lodash');
+var path = require('path');
+
 
 var sepiaUtil = require('../src/util');
 var fs = require('fs');
@@ -338,6 +340,7 @@ describe('utils.js', function() {
 
   describe('#logFixtureStatus', function() {
     const logFixtureStatus = sepiaUtil.internal.logFixtureStatus;
+    const logFixtureDebugStatus = sepiaUtil.internal.logFixtureDebugStatus
 
     beforeEach(function() {
       sinon.stub(console, 'log'); // console.log becomes a noop
@@ -381,6 +384,21 @@ describe('utils.js', function() {
       logFixtureStatus('filename', 'my-hash-body');
       fs.existsSync.called.should.equal(false);
       console.log.called.should.equal(false);
+    });
+
+    it('logs a best matching fixture when debug mode is on', function() {
+      sepiaUtil.configure({ verbose: true });
+      sepiaUtil.configure({ debug: true });
+      sinon.stub(fs, 'existsSync').returns(true);
+      fs.existsSync.withArgs('my-filename.headers').returns(false);
+
+      logFixtureDebugStatus('my-missing-filename', 'my-best-matching-fixture', 'my-best-matching-fixture-file-hash');
+      console.log.calledOnce.should.equal(true);
+      console.log.args[0][0].should.equal('\033[1;34m');
+      console.log.args[0][1].should.include('==== Best matching Fixture ====');
+      console.log.args[0].should.include('my-missing-filename');
+      console.log.args[0].should.include('my-best-matching-fixture');
+      console.log.args[0].should.include('my-best-matching-fixture-file-hash');
     });
   });
 
@@ -803,4 +821,35 @@ describe('utils.js', function() {
       shouldForceLive('my-url').should.equal(true);
     });
   });
+
+  describe('#findTheBestMatchingFixture', function() {
+    var missingFile = 'missingFile.missing'
+    var missingFileData = '{ "url": "http://www.mysite.com", "method": "POST", "body": "new test comment1389637058252" }'
+    var RequestOneFileData = '{ "url": "http://www.mysite.com", "method": "GET", "body": "Some " }'
+    var RequestTwoFileData = '{ "url": "http://www.mysite.com", "method": "POST", "body": "new test comment1389637058252" }'
+    var filesArr = ['requestOne.request', 'requestTwo.request'] ;
+    var fileReadStub, fileReadDir;
+
+    beforeEach(function() {
+      fileReadStub = sinon.stub(fs, 'readFileSync');
+      fileReadDir = sinon.stub(fs, 'readdirSync');
+    });
+
+    it('find the best matching fixture', function() {
+      fileReadStub.withArgs(path.resolve('missingFile.missing')).returns(missingFileData);
+      fileReadStub.withArgs(path.resolve('requestOne.request')).returns(RequestOneFileData);
+      fileReadStub.withArgs(path.resolve('requestTwo.request')).returns(RequestTwoFileData);
+      fileReadDir.returns(filesArr);
+
+      var fixture = sepiaUtil.findTheBestMatchingFixture(missingFile);
+      fixture.should.include('requestTwo.request');
+    });
+
+    afterEach(function() {
+      fs.readFileSync.restore();
+      fs.readdirSync.restore();
+    });
+
+  });
 });
+

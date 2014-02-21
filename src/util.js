@@ -16,10 +16,13 @@ var url = require('url');
 var path = require('path');
 var crypto = require('crypto');
 var fs = require('fs');
+var Levenshtein = require('levenshtein' )
+
 
 const COLOR_RESET = '\033[0m';
 const COLOR_RED_BOLD = '\033[1;31m';
 const COLOR_GREEN_BOLD = '\033[1;32m';
+const COLOR_BLUE_BOLD = '\033[1;34m';
 
 // -- GLOBAL STATE HANDLING ----------------------------------------------------
 
@@ -41,6 +44,9 @@ function reset() {
 
   // touch the cached file every time its used
   globalOptions.touchHits = true;
+
+  // debug support to find the best matching fixture
+  globalOptions.debug = false;
 
   // These test options are set via an HTTP request to the embedded HTTP server
   // provided by sepia. The options are reset each time any of them are set.
@@ -81,6 +87,10 @@ function configure(options) {
 
   if (options.touchHits != null) {
     globalOptions.touchHits = options.touchHits;
+  }
+
+  if (options.debug != null) {
+    globalOptions.debug = options.debug;
   }
 }
 
@@ -219,6 +229,23 @@ function logFixtureStatus(filename, filenameParts) {
   }
 }
 
+function logFixtureDebugStatus(filename, bestMatchingFixture, fileHash) {
+  if (!globalOptions.verbose) {
+    return;
+  }
+
+  //Print the hashParts
+  if (globalOptions.verbose) {
+    log(COLOR_BLUE_BOLD, [
+      '\n ==== Best matching Fixture ====\n',
+      'to :', filename,  '\n',
+      'filename:', bestMatchingFixture, '\n\n',
+      'hashParts:', fileHash, '\n',
+      '======================\n'
+    ]);
+  }
+}
+
 // -- FILENAME CONSTRUCTION ----------------------------------------------------
 
 function parseCookiesNames(cookieValue) {
@@ -324,6 +351,51 @@ function constructFilename(method, reqUrl, reqBody, reqHeaders) {
   return hashFile;
 }
 
+function findTheBestMatchingFixture(filename) {
+
+  var bestMatchingFixture = null, bestFileHash=null;
+  var lowestStringDistance = 0.0;
+  var currentDir = path.dirname(filename);
+  var currentFile, requestHash, fileHash;
+
+  var missingFileData = fs.readFileSync(path.resolve(filename));
+  missingFileData = JSON.parse(missingFileData.toString());
+
+  requestHash =
+     gatherFilenameHashParts(missingFileData.method, missingFileData.url, missingFileData.body, missingFileData.headers);
+
+  var files = fs.readdirSync(currentDir);
+  var reqUrlDomain = missingFileData.url.match(/^https?\:\/\/([^\/?#]+)(?:[\/?#]|$)/);
+  try {
+    for(var i in files) {
+      if(files[i].split('.').pop() === 'request')
+      {
+        currentFile = currentDir + '/' + files[i];
+        var data = fs.readFileSync(path.resolve(currentFile));
+
+        //Compute the string distance with the .missing request body
+        data = JSON.parse(data.toString());
+        fileHash = gatherFilenameHashParts(data.method, data.url, data.body, data.headers);
+        var urlDomain = data.url.match(/^https?\:\/\/([^\/?#]+)(?:[\/?#]|$)/);
+        if (urlDomain[0] === reqUrlDomain[0]) {
+          var ldist = new Levenshtein(fileHash.toString(),  requestHash.toString());
+          if(bestMatchingFixture === null || ldist < lowestStringDistance) {
+            bestMatchingFixture = currentFile;
+            bestFileHash = fileHash;
+            lowestStringDistance = ldist;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    throw new Error('Error computing the best matching fixture for ' + filename + e);
+  }
+
+  //Log the Fixture Debug Status
+  logFixtureDebugStatus(filename, bestMatchingFixture, bestFileHash);
+  return bestMatchingFixture;
+}
+
 // -- CONVENIENCE FUNCTIONS ----------------------------------------------------
 
 function urlFromHttpRequestOptions(options, protocol) {
@@ -344,6 +416,10 @@ function shouldForceLive(reqUrl) {
   });
 }
 
+function shouldFindMatchingFixtures() {
+  return globalOptions.debug;
+}
+
 module.exports.reset = reset;
 module.exports.configure = configure;
 module.exports.setFixtureDir = setFixtureDir;
@@ -353,6 +429,8 @@ module.exports.constructFilename = constructFilename;
 module.exports.urlFromHttpRequestOptions = urlFromHttpRequestOptions;
 module.exports.shouldForceLive = shouldForceLive;
 module.exports.removeInternalHeaders = removeInternalHeaders;
+module.exports.findTheBestMatchingFixture = findTheBestMatchingFixture;
+module.exports.shouldFindMatchingFixtures = shouldFindMatchingFixtures;
 
 module.exports.internal = {};
 module.exports.internal.globalOptions = globalOptions;
@@ -362,6 +440,7 @@ module.exports.internal.usesGlobalFixtures = usesGlobalFixtures;
 module.exports.internal.touchOnHit = touchOnHit;
 module.exports.internal.log = log;
 module.exports.internal.logFixtureStatus = logFixtureStatus;
+module.exports.internal.logFixtureDebugStatus = logFixtureDebugStatus;
 module.exports.internal.parseCookiesNames = parseCookiesNames;
 module.exports.internal.parseHeaderNames = parseHeaderNames;
 module.exports.internal.applyMatchingFilters = applyMatchingFilters;

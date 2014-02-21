@@ -15,31 +15,34 @@
 var fs = require('fs');
 var sepiaUtil = require('./util');
 var EventEmitter = require('events').EventEmitter;
-
 var playbackHits = true;
 var recordMisses = true;
 
+
 module.exports.configure = function(mode) {
   switch (mode) {
-  case 'record':
-    playbackHits = false;
-    recordMisses = true;
-    break;
+    case 'record':
+      playbackHits = false;
+      recordMisses = true;
+      break;
 
-  case 'playback':
-    playbackHits = true;
-    recordMisses = false;
-    break;
+    case 'playback':
+      playbackHits = true;
+      recordMisses = false;
+      break;
 
-  case 'cache':
-    playbackHits = true;
-    recordMisses = true;
-    break;
+    case 'cache':
+      playbackHits = true;
+      recordMisses = true;
+      break;
 
-  default:
-    throw new Error('Unrecognized mode: ' + mode);
+    default:
+      throw new Error('Unrecognized mode: ' + mode);
   }
 };
+module.exports.internal = {};
+module.exports.internal.writeRequestFile = writeRequestFile;
+
 
 ['http', 'https'].forEach(function(protocol) {
   var protocolModule = require(protocol);
@@ -52,6 +55,7 @@ module.exports.configure = function(mode) {
   protocolModule.request = function(options, callback) {
     var reqUrl = sepiaUtil.urlFromHttpRequestOptions(options, protocol);
     var reqBody = [];
+    var debug =  sepiaUtil.shouldFindMatchingFixtures();
 
     var req = new EventEmitter();
     req.setTimeout = req.abort = function() {};
@@ -153,8 +157,19 @@ module.exports.configure = function(mode) {
           body: reqBody.toString()
         };
 
-        fs.writeFileSync(filename + '.missing',
+        var missingFileName = filename + '.missing';
+        fs.writeFileSync(missingFileName,
           JSON.stringify(requestData, null, 2));
+
+        if(debug){
+          var bestMatchFileName = sepiaUtil.findTheBestMatchingFixture(missingFileName);
+          if(bestMatchFileName) {
+            throw new Error('Fixture ' + filename + ' not found,  Expected ' + missingFileName + ' , but the best match is ' + bestMatchFileName);
+          }
+          else {
+            throw new Error('Fixture ' + filename + ' not found and could not compute the best matching fixture');
+          }
+        }
 
         throw new Error('Fixture ' + filename + ' not found.');
       }
@@ -164,6 +179,13 @@ module.exports.configure = function(mode) {
       var timedOut = false;
 
       function writeHeaderFile(headers) {
+        var requestData = {
+          url: reqUrl,
+          method: options.method,
+          headers: options.headers,
+          body: reqBody.toString()
+        };
+
         var timeLength = Date.now() - startTime;
         headers.url = reqUrl;
         headers.time = timeLength;
@@ -174,6 +196,7 @@ module.exports.configure = function(mode) {
 
         fs.writeFileSync(filename + '.headers',
           JSON.stringify(headers, null, 2));
+
       }
 
       // Suppose the request times out while recording. We don't want the
@@ -216,6 +239,17 @@ module.exports.configure = function(mode) {
           } else {
             fs.writeFileSync(filename, resBody);
 
+            //Store the request, if debug is true
+            if(debug)  {
+              var requestData = {
+                url: reqUrl,
+                method: options.method,
+                headers: options.headers,
+                body: reqBody.toString()
+              };
+              writeRequestFile(requestData, filename);
+            }
+
             writeHeaderFile({
               statusCode: res.statusCode,
               headers: res.headers
@@ -257,3 +291,8 @@ module.exports.configure = function(mode) {
     return req;
   };
 });
+
+function writeRequestFile(requestData, filename) {
+  fs.writeFileSync(filename + '.request',
+    JSON.stringify(requestData, null, 2));
+}
