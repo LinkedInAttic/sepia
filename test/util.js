@@ -17,7 +17,6 @@ var sinon = require('sinon');
 var _ = require('lodash');
 var path = require('path');
 
-
 var sepiaUtil = require('../src/util');
 var fs = require('fs');
 
@@ -340,7 +339,6 @@ describe('utils.js', function() {
 
   describe('#logFixtureStatus', function() {
     const logFixtureStatus = sepiaUtil.internal.logFixtureStatus;
-    const logFixtureDebugStatus = sepiaUtil.internal.logFixtureDebugStatus
 
     beforeEach(function() {
       sinon.stub(console, 'log'); // console.log becomes a noop
@@ -385,14 +383,37 @@ describe('utils.js', function() {
       fs.existsSync.called.should.equal(false);
       console.log.called.should.equal(false);
     });
+  });
 
-    it('logs a best matching fixture when debug mode is on', function() {
+  describe('#logFixtureDebugStatus', function() {
+    const logFixtureDebugStatus = sepiaUtil.internal.logFixtureDebugStatus
+
+    beforeEach(function() {
+      sinon.stub(console, 'log'); // console.log becomes a noop
+    });
+
+    afterEach(function() {
+      console.log.restore();
+      fs.existsSync.restore();
+    });
+
+    it('does not log anything if in non-verbose mode', function() {
+      sepiaUtil.configure({ verbose: false });
+      sinon.stub(fs, 'existsSync').returns(true);
+
+      logFixtureDebugStatus('my-missing-filename', 'my-best-matching-fixture',
+        'my-best-matching-fixture-file-hash');
+      fs.existsSync.called.should.equal(false);
+      console.log.called.should.equal(false);
+    });
+
+    it('logs a best matching fixture when verbose mode is true', function() {
       sepiaUtil.configure({ verbose: true });
-      sepiaUtil.configure({ debug: true });
       sinon.stub(fs, 'existsSync').returns(true);
       fs.existsSync.withArgs('my-filename.headers').returns(false);
 
-      logFixtureDebugStatus('my-missing-filename', 'my-best-matching-fixture', 'my-best-matching-fixture-file-hash');
+      logFixtureDebugStatus('my-missing-filename', 'my-best-matching-fixture',
+        'my-best-matching-fixture-file-hash');
       console.log.calledOnce.should.equal(true);
       console.log.args[0][0].should.equal('\033[1;34m');
       console.log.args[0][1].should.include('==== Best matching Fixture ====');
@@ -823,27 +844,108 @@ describe('utils.js', function() {
   });
 
   describe('#findTheBestMatchingFixture', function() {
-    var missingFile = 'missingFile.missing'
-    var missingFileData = '{ "url": "http://www.mysite.com", "method": "POST", "body": "new test comment1389637058252" }'
-    var RequestOneFileData = '{ "url": "http://www.mysite.com", "method": "GET", "body": "Some " }'
-    var RequestTwoFileData = '{ "url": "http://www.mysite.com", "method": "POST", "body": "new test comment1389637058252" }'
-    var filesArr = ['requestOne.request', 'requestTwo.request'] ;
-    var fileReadStub, fileReadDir;
 
     beforeEach(function() {
-      fileReadStub = sinon.stub(fs, 'readFileSync');
-      fileReadDir = sinon.stub(fs, 'readdirSync');
+      sinon.stub(fs, 'readFileSync');
+      sinon.stub(fs, 'readdirSync');
     });
 
-    it('find the best matching fixture', function() {
-      fileReadStub.withArgs(path.resolve('missingFile.missing')).returns(missingFileData);
-      fileReadStub.withArgs(path.resolve('requestOne.request')).returns(RequestOneFileData);
-      fileReadStub.withArgs(path.resolve('requestTwo.request')).returns(RequestTwoFileData);
-      fileReadDir.returns(filesArr);
+    it('finds the best matching fixture', function() {
+      var missingFile = 'missingFile.missing';
+      var missingFileData = JSON.stringify({
+        url: 'http://mysite.com',
+        method: 'POST',
+        body: 'missing file'
+      });
+      var RequestOneFileData = JSON.stringify({
+        url: 'http://mysite.com',
+        method: 'POST',
+        body: 'Some different request'
+      });
+      var RequestTwoFileData = JSON.stringify({
+        url: 'http://mysite.com',
+        method: 'POST',
+        body: 'missing file 0123'
+      });
+      var filesArr = ['requestOne.request', 'requestTwo.request'] ;
+      var fileReadStub, fileReadDir;
+
+      fs.readFileSync.withArgs(path.resolve('missingFile.missing'))
+        .returns(missingFileData);
+      fs.readFileSync.withArgs(path.resolve('requestOne.request'))
+        .returns(RequestOneFileData);
+      fs.readFileSync.withArgs(path.resolve('requestTwo.request'))
+        .returns(RequestTwoFileData);
+      fs.readdirSync.returns(filesArr);
 
       var fixture = sepiaUtil.findTheBestMatchingFixture(missingFile);
       fixture.should.include('requestTwo.request');
     });
+
+    it('finds the best matching fixture, with the same host only', function() {
+      var missingFile = 'missingFile.missing';
+      var missingFileData = JSON.stringify({
+        url: 'http://mysite.com',
+        method: 'POST',
+        body: 'missing file'
+      });
+      var RequestOneFileData = JSON.stringify({
+        url: 'http://mysite.com',
+        method: 'POST',
+        body: 'Some different request'
+      });
+      var RequestTwoFileData = JSON.stringify({
+        url: 'http://mysite2.com',
+        method: 'POST',
+        body: 'missing file'
+      });
+      var filesArr = ['requestOne.request', 'requestTwo.request'] ;
+      var fileReadStub, fileReadDir;
+
+      fs.readFileSync.withArgs(path.resolve('missingFile.missing'))
+        .returns(missingFileData);
+      fs.readFileSync.withArgs(path.resolve('requestOne.request'))
+        .returns(RequestOneFileData);
+      fs.readFileSync.withArgs(path.resolve('requestTwo.request'))
+        .returns(RequestTwoFileData);
+      fs.readdirSync.returns(filesArr);
+
+      var fixture = sepiaUtil.findTheBestMatchingFixture(missingFile);
+      fixture.should.include('requestOne.request');
+    });
+
+    it('returns null when there is no match', function() {
+      var missingFile = 'missingFile.missing';
+      var missingFileData = JSON.stringify({
+        url: 'http://mysite.com',
+        method: 'POST',
+        body: 'missing file'
+      });
+      var RequestOneFileData = JSON.stringify({
+        url: 'http://mysite1.com',
+        method: 'POST',
+        body: 'Some different request'
+      });
+      var RequestTwoFileData = JSON.stringify({
+        url: 'http://mysite2.com',
+        method: 'POST',
+        body: 'missing file'
+      });
+      var filesArr = ['requestOne.request', 'requestTwo.request'] ;
+      var fileReadStub, fileReadDir;
+
+      fs.readFileSync.withArgs(path.resolve('missingFile.missing'))
+        .returns(missingFileData);
+      fs.readFileSync.withArgs(path.resolve('requestOne.request'))
+        .returns(RequestOneFileData);
+      fs.readFileSync.withArgs(path.resolve('requestTwo.request'))
+        .returns(RequestTwoFileData);
+      fs.readdirSync.returns(filesArr);
+
+      var fixture = sepiaUtil.findTheBestMatchingFixture(missingFile);
+      should.not.exist(fixture);
+    });
+
 
     afterEach(function() {
       fs.readFileSync.restore();

@@ -16,8 +16,7 @@ var url = require('url');
 var path = require('path');
 var crypto = require('crypto');
 var fs = require('fs');
-var Levenshtein = require('levenshtein' )
-
+var Levenshtein = require('levenshtein');
 
 const COLOR_RESET = '\033[0m';
 const COLOR_RED_BOLD = '\033[1;31m';
@@ -234,16 +233,14 @@ function logFixtureDebugStatus(filename, bestMatchingFixture, fileHash) {
     return;
   }
 
-  //Print the hashParts
-  if (globalOptions.verbose) {
-    log(COLOR_BLUE_BOLD, [
-      '\n ==== Best matching Fixture ====\n',
-      'to :', filename,  '\n',
-      'filename:', bestMatchingFixture, '\n\n',
-      'hashParts:', fileHash, '\n',
-      '======================\n'
-    ]);
-  }
+  // Print the hashParts
+  log(COLOR_BLUE_BOLD, [
+    '\n ==== Best matching Fixture ====\n',
+    'to :', filename,  '\n',
+    'filename:', bestMatchingFixture, '\n\n',
+    'hashParts:', fileHash, '\n',
+    '======================\n'
+  ]);
 }
 
 // -- FILENAME CONSTRUCTION ----------------------------------------------------
@@ -353,7 +350,8 @@ function constructFilename(method, reqUrl, reqBody, reqHeaders) {
 
 function findTheBestMatchingFixture(filename) {
 
-  var bestMatchingFixture = null, bestFileHash=null;
+  var bestMatchingFixture = null;
+  var bestFileHash = null;
   var lowestStringDistance = 0.0;
   var currentDir = path.dirname(filename);
   var currentFile, requestHash, fileHash;
@@ -362,24 +360,27 @@ function findTheBestMatchingFixture(filename) {
   missingFileData = JSON.parse(missingFileData.toString());
 
   requestHash =
-     gatherFilenameHashParts(missingFileData.method, missingFileData.url, missingFileData.body, missingFileData.headers);
+    gatherFilenameHashParts(missingFileData.method, missingFileData.url,
+     missingFileData.body, missingFileData.headers);
 
   var files = fs.readdirSync(currentDir);
-  var reqUrlDomain = missingFileData.url.match(/^https?\:\/\/([^\/?#]+)(?:[\/?#]|$)/);
+  var reqUrlDomain = url.parse(missingFileData.url).host;
+
   try {
-    for(var i in files) {
-      if(files[i].split('.').pop() === 'request')
-      {
+    for (var i in files) {
+      if (files[i].split('.').pop() === 'request') {
         currentFile = currentDir + '/' + files[i];
         var data = fs.readFileSync(path.resolve(currentFile));
 
-        //Compute the string distance with the .missing request body
+        // Compute the string distance with the .missing request body
         data = JSON.parse(data.toString());
-        fileHash = gatherFilenameHashParts(data.method, data.url, data.body, data.headers);
-        var urlDomain = data.url.match(/^https?\:\/\/([^\/?#]+)(?:[\/?#]|$)/);
-        if (urlDomain[0] === reqUrlDomain[0]) {
-          var ldist = new Levenshtein(fileHash.toString(),  requestHash.toString());
-          if(bestMatchingFixture === null || ldist < lowestStringDistance) {
+        fileHash = gatherFilenameHashParts(data.method, data.url,
+          data.body, data.headers);
+        var urlDomain = url.parse(data.url).host;
+        if (urlDomain === reqUrlDomain) {
+          var ldist = new Levenshtein(fileHash.toString(),
+            requestHash.toString());
+          if (bestMatchingFixture === null || ldist < lowestStringDistance) {
             bestMatchingFixture = currentFile;
             bestFileHash = fileHash;
             lowestStringDistance = ldist;
@@ -388,10 +389,11 @@ function findTheBestMatchingFixture(filename) {
       }
     }
   } catch (e) {
-    throw new Error('Error computing the best matching fixture for ' + filename + e);
+    throw new Error('Error computing the best matching fixture for ' +
+      filename + ' ' + e);
   }
 
-  //Log the Fixture Debug Status
+  // Log the Fixture Debug Status
   logFixtureDebugStatus(filename, bestMatchingFixture, bestFileHash);
   return bestMatchingFixture;
 }

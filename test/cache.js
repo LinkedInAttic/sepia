@@ -3,25 +3,23 @@ var cache = require('../src/cache');
 var sinon = require('sinon');
 var fs = require('fs');
 
-
 describe('cache.js', function() {
 
-  describe('#writeRequests', function() {
+  describe('#writeRequestFile', function() {
 
     before(function() {
       sinon.stub(fs, 'writeFileSync');
     });
 
     var requestData = {
-      url: 'reqUrl',
-      method: 'GET',
-      headers: 'headers',
-      body: 'body'
+      data: 'data'
     };
 
-    it('writeRequests', function() {
-      cache.internal.writeRequestFile(requestData, 'abc');
+    it('should write the request to the file', function() {
+      cache.internal.writeRequestFile(requestData, 'myrequest');
       fs.writeFileSync.called.should.equal(true);
+      fs.writeFileSync.calledWith('myrequest.request',
+        JSON.stringify(requestData, null, 2)).should.equal(true);
     });
 
     after(function() {
