@@ -22,6 +22,10 @@
     "Priyanka Salvi (http://www.linkedin.com/in/coolsmartgalpriyankanew)",
     "Ashima Atul (https://github.com/ashimaatul)"
   ],
+
+  "dependencies": {
+    "levenshtein": "1.0.2"
+  },
   "devDependencies": {
     "request": "2.x",
     "lodash": "2.x",

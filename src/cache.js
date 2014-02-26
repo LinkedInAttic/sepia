@@ -52,6 +52,7 @@ module.exports.configure = function(mode) {
   protocolModule.request = function(options, callback) {
     var reqUrl = sepiaUtil.urlFromHttpRequestOptions(options, protocol);
     var reqBody = [];
+    var debug = sepiaUtil.shouldFindMatchingFixtures();
 
     var req = new EventEmitter();
     req.setTimeout = req.abort = function() {};
@@ -153,8 +154,22 @@ module.exports.configure = function(mode) {
           body: reqBody.toString()
         };
 
-        fs.writeFileSync(filename + '.missing',
+        var missingFileName = filename + '.missing';
+        fs.writeFileSync(missingFileName,
           JSON.stringify(requestData, null, 2));
+
+        if (debug) {
+          var bestMatchFileName =
+            sepiaUtil.findTheBestMatchingFixture(missingFileName);
+          if (bestMatchFileName) {
+            throw new Error('Fixture ' + filename + ' not found,  Expected ' +
+              missingFileName +
+              ' , but the best match is ' + bestMatchFileName);
+          } else {
+            throw new Error('Fixture ' + filename +
+              ' not found and could not compute the best matching fixture');
+          }
+        }
 
         throw new Error('Fixture ' + filename + ' not found.');
       }
@@ -216,6 +231,17 @@ module.exports.configure = function(mode) {
           } else {
             fs.writeFileSync(filename, resBody);
 
+            // Store the request, if debug is true
+            if (debug) {
+              var requestData = {
+                url: reqUrl,
+                method: options.method,
+                headers: options.headers,
+                body: reqBody.toString()
+              };
+              writeRequestFile(requestData, filename);
+            }
+
             writeHeaderFile({
               statusCode: res.statusCode,
               headers: res.headers
@@ -257,3 +283,11 @@ module.exports.configure = function(mode) {
     return req;
   };
 });
+
+function writeRequestFile(requestData, filename) {
+  fs.writeFileSync(filename + '.request',
+    JSON.stringify(requestData, null, 2));
+}
+
+module.exports.internal = {};
+module.exports.internal.writeRequestFile = writeRequestFile;

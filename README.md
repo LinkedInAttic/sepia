@@ -136,7 +136,8 @@ options have default values, so they need not be configured unless necessary.
 
     var sepia = require('sepia');
     sepia.configure({
-      verbose: true
+      verbose: true,
+      debug: true
     });
 
 The full list of options are as follows:
@@ -144,7 +145,21 @@ The full list of options are as follows:
 - `verbose`: outputs extra data whenever a fixture is accessed, along with the
   parts used to create the name of the fixture.
 - `includeHeaderNames`, `headerWhitelist`, `includeCookieNames`,
-  `cookieWhitelist`: detailed in a later section
+  `cookieWhitelist`: detailed in a later section.
+- 'debug': Useful for debugging the requests when there is a cache miss. If
+   fixtures are recorded with debug mode true, Sepia will additionally save all
+   the incoming requests  as '.request' files. Furthermore, in case of a cache
+   miss, during playback, it will attempt to compare the the missing
+   request(.missing), against all the available saved requests(.requests)
+   to find the best match, by computing the string distance between each. The
+   output will be the most similar request fixture, having the least string
+   distance. Based on this url and body filters can be added which is explained
+   in the next section.
+
+   For performance and to minimize the search space & space complexity, it is
+   recommended to have fixtures saved in separate folders per test or test suite.
+   The debug feature is still under development and we will continue to refine
+   it in the upcoming releases.
 
 ## URL and Body Filtering
 
@@ -372,5 +387,6 @@ data is retrieved from a file and sent back using a dummy response object.
 * [Ethan Goldblum](https://github.com/egoldblum)
 * [Shao-Hua Kao](https://github.com/ethankao)
 * [Deepank Gupta](https://github.com/deepankgupta)
-* [Priyanka Salvi](http://www.linkedin.com/in/coolsmartgalpriyankanew)
+* [Priyanka Salvi](https://github.com/salvipriyanka/)
 * [Ashima Atul](https://github.com/ashimaatul)
+
