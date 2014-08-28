@@ -1,4 +1,4 @@
-var should = require('should');
+require('should');
 var cache = require('../src/cache');
 var sinon = require('sinon');
 var fs = require('fs');

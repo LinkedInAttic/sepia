@@ -386,7 +386,7 @@ describe('utils.js', function() {
   });
 
   describe('#logFixtureDebugStatus', function() {
-    const logFixtureDebugStatus = sepiaUtil.internal.logFixtureDebugStatus
+    const logFixtureDebugStatus = sepiaUtil.internal.logFixtureDebugStatus;
 
     beforeEach(function() {
       sinon.stub(console, 'log'); // console.log becomes a noop
@@ -878,7 +878,6 @@ describe('utils.js', function() {
         body: 'missing file 0123'
       });
       var filesArr = ['requestOne.request', 'requestTwo.request'] ;
-      var fileReadStub, fileReadDir;
 
       fs.readFileSync.withArgs(path.resolve('missingFile.missing'))
         .returns(missingFileData);
@@ -910,7 +909,6 @@ describe('utils.js', function() {
         body: 'missing file'
       });
       var filesArr = ['requestOne.request', 'requestTwo.request'] ;
-      var fileReadStub, fileReadDir;
 
       fs.readFileSync.withArgs(path.resolve('missingFile.missing'))
         .returns(missingFileData);
@@ -942,7 +940,6 @@ describe('utils.js', function() {
         body: 'missing file'
       });
       var filesArr = ['requestOne.request', 'requestTwo.request'] ;
-      var fileReadStub, fileReadDir;
 
       fs.readFileSync.withArgs(path.resolve('missingFile.missing'))
         .returns(missingFileData);
