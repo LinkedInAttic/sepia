@@ -115,6 +115,7 @@ module.exports.configure = function(mode) {
         res.connection = {
           listeners: function() { return []; },
           once: function() {},
+          setMaxListeners: function() {},
           client: {
             authorized: true
           }
