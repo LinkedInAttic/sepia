@@ -139,6 +139,5 @@ step(
   function() { setTimeout(this, 100); }, // let the server start up
   function() { liveRequests  (this); },
   function() { cachedRequests(this); },
-  _.bind(httpServer.close, httpServer),
-  function() { process.exit(0); }
+  _.bind(httpServer.close, httpServer)
 );

@@ -279,16 +279,24 @@ motivating example given at the beginning of this document, the integration
 test driver runs in a completely different process than the server managed by
 sepia.
 
-To help manage the sepia instance in a separate process, sepia itself starts up
-an embedded HTTP server in the process where it replaces the HTTP request
+To help manage the sepia instance in a separate process, sepia itself can start
+up an embedded HTTP server in the process where it replaces the HTTP request
 functions. The test process can then communicate with this HTTP server and set
 options, namely the directory into which fixtures will go. This architecture is
 is visualized as follows:
 
 <img src="https://raw.github.com/linkedin/sepia/master/architecture-diagram-2.png" alt="" height="210" width="450" align="center" />
 
-This can be used to
-emulate "cassette"-like functionality:
+This can be enabled by asking to start up the embedded server:
+
+    var sepia = require('sepia').withSepiaServer();
+
+Note that because this causes a new server to be started, the process that
+includes sepia should shutdown the server as follows:
+
+    sepia.shutdown();
+
+This can be used to emulate "cassette"-like functionality:
 
     // suppose the process that is running sepia is bound to port 8080
     // in the test process

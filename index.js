@@ -12,26 +12,53 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// By default, we won't start up the sepia server.
+var server;
+
 switch (process.env.VCR_MODE) {
 case 'record':
   var cache = require('./src/cache');
   cache.configure('record');
-  require('./src/server');
   break;
 case 'playback':
   var cache = require('./src/cache');
   cache.configure('playback');
-  require('./src/server');
   break;
 case 'cache':
   var cache = require('./src/cache');
   cache.configure('cache');
-  require('./src/server');
   break;
 // otherwise, leave http alone
+}
+
+function withSepiaServer() {
+  switch (process.env.VCR_MODE) {
+  case 'record':
+  case 'playback':
+  case 'cache':
+    server = require('./src/server');
+    break;
+  }
+
+  // Allows for:
+  //   var sepia = require('sepia').withSepiaServer();
+  return module.exports;
+}
+
+// It's safe to call this function whether or not sepia had any effect.
+function shutdown(next) {
+  if (server) {
+    return server.shutdown(next);
+  }
+
+  if (next) {
+    next();
+  }
 }
 
 var sepiaUtil = require('./src/util');
 module.exports.filter = sepiaUtil.addFilter;
 module.exports.fixtureDir = sepiaUtil.setFixtureDir;
 module.exports.configure = sepiaUtil.configure;
+module.exports.withSepiaServer = withSepiaServer;
+module.exports.shutdown = shutdown;

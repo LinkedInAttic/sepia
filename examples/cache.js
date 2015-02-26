@@ -71,6 +71,5 @@ step(
   function() { setTimeout(this, 100); }, // let the server start up
   function() { makeRequest('NO FIXTURES' , false, this); },
   function() { makeRequest('YES FIXTURES', true , this); },
-  httpServer.close.bind(httpServer),
-  function() { process.exit(0); }
+  httpServer.close.bind(httpServer)
 );

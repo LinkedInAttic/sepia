@@ -300,6 +300,5 @@ step(
   //    }
   //  }, false, true, this);
   //},
-  _.bind(httpServer.close, httpServer),
-  function() { process.exit(0); }
+  _.bind(httpServer.close, httpServer)
 );

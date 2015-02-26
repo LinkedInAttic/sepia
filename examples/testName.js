@@ -42,7 +42,8 @@ var step = require('step');
 require('should');
 var common = require('./common');
 
-var sepia = require('..');
+var sepia = require('..')
+  .withSepiaServer();
 
 // -- ECHO SERVER --------------------------------------------------------------
 
@@ -185,5 +186,5 @@ step(
   function() { requestWithHeader('test3', false, this); },
   function() { requestWithHeader('test3', true, this); },
   _.bind(httpServer.close, httpServer),
-  function() { process.exit(0); }
+  _.bind(sepia.shutdown, sepia)
 );
