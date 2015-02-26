@@ -40,4 +40,6 @@ process.on('SIGTERM', function() {
   httpServer.close();
 });
 
-module.exports = httpServer;
+module.exports.closeServer = function() {
+  httpServer.close();
+}
