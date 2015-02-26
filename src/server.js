@@ -35,11 +35,15 @@ var httpServer = http.createServer(function(req, res) {
 
 }).listen(58080, '0.0.0.0');
 
+var closeServer = function() {
+  httpServer.close();
+};
+
 // exit hook to close http server
 process.on('SIGTERM', function() {
-  httpServer.close();
+  closeServer();
 });
 
-module.exports.closeServer = function() {
-  httpServer.close();
-}
+module.exports.close = function() {
+  closeServer();
+};
