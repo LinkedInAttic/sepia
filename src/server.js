@@ -39,3 +39,5 @@ var httpServer = http.createServer(function(req, res) {
 process.on('SIGTERM', function() {
   httpServer.close();
 });
+
+module.exports = httpServer;
