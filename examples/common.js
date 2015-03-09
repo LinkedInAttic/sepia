@@ -21,7 +21,7 @@ function ensureNonCacheMode(filename) {
 }
 
 function shouldBeFast(time) {
-  time.should.be.below(10);
+  time.should.be.below(25);
 }
 
 function shouldBeSlow(time) {
