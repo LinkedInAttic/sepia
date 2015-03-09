@@ -31,10 +31,15 @@ start_test 'basic HTTP request'
 VCR_MODE=record   node examples/http
 VCR_MODE=playback node examples/http
 
-start_test 'basic HTTP request'
+start_test 'request module'
 rm -r fixtures/
 VCR_MODE=record   node examples/request
 VCR_MODE=playback node examples/request
+
+start_test 'then-request module'
+rm -r fixtures/
+VCR_MODE=record   node examples/thenRequest
+VCR_MODE=playback node examples/thenRequest
 
 start_test 'cache mode'
 rm -r fixtures/

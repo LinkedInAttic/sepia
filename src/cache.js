@@ -15,6 +15,7 @@
 var fs = require('fs');
 var sepiaUtil = require('./util');
 var EventEmitter = require('events').EventEmitter;
+var http = require('http');
 
 var playbackHits = true;
 var recordMisses = true;
@@ -92,6 +93,9 @@ module.exports.configure = function(mode) {
 
         var socket = new EventEmitter();
         socket.setTimeout = socket.setEncoding = function() {};
+        // Needed for node 0.8.x
+        socket.destroy = socket.pause = socket.resume = function() {};
+
         req.socket = socket;
         req.emit('socket', socket);
 
@@ -106,23 +110,9 @@ module.exports.configure = function(mode) {
           return;
         }
 
-        var res = new EventEmitter();
+        var res = new http.IncomingMessage(socket);
         res.headers = resHeaders.headers || {};
         res.statusCode = resHeaders.statusCode;
-
-        // Flesh out the response because the request module expects these
-        // properties to be present.
-        res.connection = {
-          listeners: function() { return []; },
-          once: function() {},
-          setMaxListeners: function() {},
-          client: {
-            authorized: true
-          }
-        };
-
-        res.setEncoding = function() {};
-        res.abort = res.pause = res.resume = function() {};
 
         if (callback) {
           callback(res);
@@ -133,8 +123,16 @@ module.exports.configure = function(mode) {
         }
 
         req.emit('response', res);
-        res.emit('data', resBody);
-        res.emit('end');
+
+        if (res.push) {
+          // node 0.10.x
+          res.push(resBody);
+          res.push(null);
+        } else {
+          // node 0.8.x
+          res.emit('data', resBody);
+          res.emit('end');
+        }
       }
 
       // If the file exists and we allow playback (e.g. we are not in

@@ -6,8 +6,10 @@ created to isolate a server from its remote downstream dependencies, for speed
 and fault-tolerence.
 
 Sepia should work with any HTTP library in node.js that uses `http#request` and
-`https#request`, though in practice, it has only been tested against [the
-`request` module](https://github.com/mikeal/request).
+`https#request`. In practice, it has been extensively tested against [the
+`request` module](https://github.com/mikeal/request), and there is a test to
+ensure it works with [the `then-request`
+module](https://github.com/then/then-request).
 
 Sepia was developed and is in use at LinkedIn since early 2013. There, it is
 used to improve the speed and reliability of the integration test suite for the

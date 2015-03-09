@@ -1,7 +1,7 @@
 {
   "name": "sepia",
   "author": "Avik Das <avik.das@berkeley.edu>",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A VCR-like module that records HTTP interactions and plays them back for speed and reliability",
   "keywords": [
     "http",
@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "request": "2.x",
+    "then-request": "2.x",
     "lodash": "2.x",
     "step": "0.x",
     "jshint": "2.x",
