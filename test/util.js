@@ -853,6 +853,24 @@ describe('utils.js', function() {
     });
   });
 
+  describe('#shouldFallbackToGlobal', function() {
+    const shouldFallbackToGlobal = sepiaUtil.shouldFallbackToGlobal;
+
+    it('returns true when fallbackToGlobal is true', function() {
+      sepiaUtil.configure({
+        fallbackToGlobal: true
+      });
+      shouldFallbackToGlobal().should.equal(true);
+    });
+
+    it('returns false when fallbackToGlobal is false', function() {
+      sepiaUtil.configure({
+        fallbackToGlobal: false
+      });
+      shouldFallbackToGlobal().should.equal(false);
+    });
+  });
+
   describe('#findTheBestMatchingFixture', function() {
 
     beforeEach(function() {
@@ -961,4 +979,3 @@ describe('utils.js', function() {
 
   });
 });
-

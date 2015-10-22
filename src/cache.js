@@ -140,6 +140,11 @@ module.exports.configure = function(mode) {
       if (playbackHits && !forceLive && fs.existsSync(filename + '.headers')) {
         playback();
         return;
+      } else if(sepiaUtil.shouldFallbackToGlobal()) {
+        filename = sepiaUtil.constructFilename(options.method, reqUrl,
+          reqBody.toString(), options.headers);
+        playback();
+        return;
       }
 
       // If we are not recording, and the fixtures file does not exist, then
