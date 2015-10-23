@@ -137,9 +137,18 @@ module.exports.configure = function(mode) {
 
       // If the file exists and we allow playback (e.g. we are not in
       // record-only mode), then simply play back the call.
-      if (playbackHits && !forceLive && fs.existsSync(filename + '.headers')) {
-        playback();
-        return;
+      if (playbackHits && !forceLive) {
+        if(fs.existsSync(filename + '.headers')) {
+          playback();
+          return;
+        } else if(sepiaUtil.shouldFallbackToGlobal()) {
+          filename = sepiaUtil.constructFilename(options.method, reqUrl,
+            reqBody.toString(), options.headers);
+          if(fs.existsSync(filename + '.headers')) {
+            playback();
+            return;
+          }
+        }
       }
 
       // If we are not recording, and the fixtures file does not exist, then

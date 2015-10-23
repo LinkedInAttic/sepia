@@ -50,6 +50,9 @@ function reset() {
   // These test options are set via an HTTP request to the embedded HTTP server
   // provided by sepia. The options are reset each time any of them are set.
   globalOptions.testOptions = {};
+
+  // This allows scoped requests to fallback to global requests
+  globalOptions.fallbackToGlobal = false;
 }
 
 // automatically reset the state of the module when 'required'.
@@ -90,6 +93,10 @@ function configure(options) {
 
   if (options.debug != null) {
     globalOptions.debug = options.debug;
+  }
+
+  if (options.fallbackToGlobal != null) {
+    globalOptions.fallbackToGlobal = options.fallbackToGlobal;
   }
 }
 
@@ -423,6 +430,10 @@ function shouldForceLive(reqUrl) {
   });
 }
 
+function shouldFallbackToGlobal() {
+  return globalOptions.fallbackToGlobal;
+}
+
 function shouldFindMatchingFixtures() {
   return globalOptions.debug;
 }
@@ -437,6 +448,7 @@ module.exports.urlFromHttpRequestOptions = urlFromHttpRequestOptions;
 module.exports.shouldForceLive = shouldForceLive;
 module.exports.removeInternalHeaders = removeInternalHeaders;
 module.exports.findTheBestMatchingFixture = findTheBestMatchingFixture;
+module.exports.shouldFallbackToGlobal = shouldFallbackToGlobal;
 module.exports.shouldFindMatchingFixtures = shouldFindMatchingFixtures;
 
 module.exports.internal = {};
