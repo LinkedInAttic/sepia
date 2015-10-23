@@ -76,3 +76,7 @@ VCR_MODE=cache node examples/forceLive
 start_test 'test-specific fixture directories'
 rm -r fixtures/
 VCR_MODE=cache node examples/testName
+
+start_test 'test-specific fixture directories with fallback to global'
+rm -r fixtures/
+VCR_MODE=cache node examples/testNameWithFallback
