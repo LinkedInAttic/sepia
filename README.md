@@ -146,6 +146,7 @@ The full list of options are as follows:
 
 - `verbose`: outputs extra data whenever a fixture is accessed, along with the
   parts used to create the name of the fixture.
+- `touchHits`: disable timestamp update of fixture files on a cache hit.
 - `includeHeaderNames`, `headerWhitelist`, `includeCookieNames`,
   `cookieWhitelist`: detailed in a later section.
 - 'debug': Useful for debugging the requests when there is a cache miss. If
