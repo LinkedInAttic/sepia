@@ -146,6 +146,7 @@ The full list of options are as follows:
 
 - `verbose`: outputs extra data whenever a fixture is accessed, along with the
   parts used to create the name of the fixture.
+- `touchHits`: disable timestamp update of fixture files on a cache hit.
 - `includeHeaderNames`, `headerWhitelist`, `includeCookieNames`,
   `cookieWhitelist`: detailed in a later section.
 - 'debug': Useful for debugging the requests when there is a cache miss. If
@@ -393,10 +394,12 @@ data is retrieved from a file and sent back using a dummy response object.
 
 ## Contributors
 
+* [Avik Das](https://github.com/avik-das)
 * [Vlad Shlosberg](https://github.com/vshlos)
 * [Ethan Goldblum](https://github.com/egoldblum)
 * [Shao-Hua Kao](https://github.com/ethankao)
 * [Deepank Gupta](https://github.com/deepankgupta)
 * [Priyanka Salvi](https://github.com/salvipriyanka/)
 * [Ashima Atul](https://github.com/ashimaatul)
-
+* [Delwyn de Villiers](https://github.com/delwyn)
+* [Mark Seminatore](https://github.com/mseminatore)
