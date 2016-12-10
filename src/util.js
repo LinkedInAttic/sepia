@@ -177,7 +177,7 @@ function touchOnHit(filename) {
   }
 
   filename = filename + '.headers';
-  var now = Infinity;	// per NodeJS this will correctly set timestamp to Date.now() / 1000
+  var now = Date.now() / 1000;
 
   if (fs.existsSync(filename)) {
     fs.utimesSync(filename, now, now);
