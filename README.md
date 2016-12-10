@@ -394,10 +394,12 @@ data is retrieved from a file and sent back using a dummy response object.
 
 ## Contributors
 
+* [Avik Das](https://github.com/avik-das)
 * [Vlad Shlosberg](https://github.com/vshlos)
 * [Ethan Goldblum](https://github.com/egoldblum)
 * [Shao-Hua Kao](https://github.com/ethankao)
 * [Deepank Gupta](https://github.com/deepankgupta)
 * [Priyanka Salvi](https://github.com/salvipriyanka/)
 * [Ashima Atul](https://github.com/ashimaatul)
-
+* [Delwyn de Villiers](https://github.com/delwyn)
+* [Mark Seminatore](https://github.com/mseminatore)
