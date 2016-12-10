@@ -32,6 +32,7 @@ function reset() {
     path.join(process.cwd(), 'fixtures/generated');
 
   globalOptions.filenameFilters = [];
+  globalOptions.substitutions = [];
 
   globalOptions.includeHeaderNames = true;
   globalOptions.headerWhitelist = [];
@@ -115,6 +116,33 @@ function addFilter(inFilter) {
 
   globalOptions.filenameFilters.push(filter);
 }
+
+//
+// substitutions
+//
+function addSubstitution(opaqueKey, actualValueFn) {
+  globalOptions.substitutions.push({opaqueKey: opaqueKey, actualValueFn: actualValueFn});
+}
+
+function substituteWithOpaqueKeys(text) {
+  var substitutions = globalOptions.substitutions;
+  for (var i=0; i<substitutions.length; i++) {
+    var subst = substitutions[i];
+    console.log(`substituteWithOpaqueKeys text: ${text} type=${typeof(text)}`);
+    text = text.replace(subst.actualValueFn(), subst.opaqueKey);
+  }
+  return text;
+}
+
+function substituteWithRealValues(text) {
+  var substitutions = globalOptions.substitutions;
+  for (var i=0; i<substitutions.length; i++) {
+    var subst = substitutions[i];
+    text = text.replace(subst.opaqueKey, subst.actualValueFn());
+  }
+  return text;
+}
+
 
 // -- UTILITY FUNCTIONS --------------------------------------------------------
 
@@ -438,6 +466,9 @@ module.exports.shouldForceLive = shouldForceLive;
 module.exports.removeInternalHeaders = removeInternalHeaders;
 module.exports.findTheBestMatchingFixture = findTheBestMatchingFixture;
 module.exports.shouldFindMatchingFixtures = shouldFindMatchingFixtures;
+module.exports.addSubstitution = addSubstitution;
+module.exports.substituteWithRealValues = substituteWithRealValues;
+module.exports.substituteWithOpaqueKeys = substituteWithOpaqueKeys;
 
 module.exports.internal = {};
 module.exports.internal.globalOptions = globalOptions;

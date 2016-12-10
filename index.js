@@ -58,6 +58,7 @@ function shutdown(next) {
 
 var sepiaUtil = require('./src/util');
 module.exports.filter = sepiaUtil.addFilter;
+module.exports.substitute = sepiaUtil.addSubstitution;
 module.exports.fixtureDir = sepiaUtil.setFixtureDir;
 module.exports.configure = sepiaUtil.configure;
 module.exports.withSepiaServer = withSepiaServer;
