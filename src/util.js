@@ -128,7 +128,6 @@ function substituteWithOpaqueKeys(text) {
   var substitutions = globalOptions.substitutions;
   for (var i=0; i<substitutions.length; i++) {
     var subst = substitutions[i];
-    console.log(`substituteWithOpaqueKeys text: ${text} type=${typeof(text)}`);
     text = text.replace(subst.actualValueFn(), subst.opaqueKey);
   }
   return text;
@@ -372,7 +371,6 @@ function constructFilename(method, reqUrl, reqBody, reqHeaders) {
 
   logFixtureStatus(hashFile, hashParts);
   touchOnHit(hashFile);
-
   return hashFile;
 }
 
