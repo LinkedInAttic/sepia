@@ -505,6 +505,31 @@ describe('utils.js', function() {
       }).should.eql(['a', 'b']);
     });
 
+    it('includes header values if requested', function () {
+      sepiaUtil.configure({
+        includeHeaderValues: true
+      });
+
+      parseHeaders({
+        b: 1,
+        c: 2,
+        a: 3
+      }).should.eql(['a:3', 'b:1', 'c:2']);
+    });
+
+    it('includes header values if requested and filters by whitelist case insensitively', function () {
+      sepiaUtil.configure({
+        includeHeaderValues: true,
+        headerWhitelist: ['A', 'B']
+      });
+
+      parseHeaders({
+        b: 1,
+        c: 2,
+        a: 3
+      }).should.eql(['a:3', 'b:1']);
+    });
+
     it('filters out sepia headers', function() {
       parseHeaders({
         b: 1,

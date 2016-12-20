@@ -61,6 +61,10 @@ function configure(options) {
     globalOptions.includeHeaderNames = options.includeHeaderNames;
   }
 
+  if (options.includeHeaderValues) {
+    globalOptions.includeHeaderValues = options.includeHeaderValues;
+  }
+
   if (options.headerWhitelist != null) {
     globalOptions.headerWhitelist = options.headerWhitelist.map(
       function(item) {
@@ -268,18 +272,19 @@ function parseCookiesNames(cookieValue) {
   return cookies.sort();
 }
 
-function parseHeaders(headers, includeHeaderValues) {
+function parseHeaders(headers) {
   headers = removeInternalHeaders(headers);
   var headerData = [];
   var whitelist = globalOptions.headerWhitelist || [];
 
   for (var name in headers) {
-    if (headers.hasOwnProperty(name) && (whitelist.length===0 || whitelist.indexOf(name)>=0)) {
-      if (includeHeaderValues) {
-        headerData.push(name.toLowerCase() + ':' + headers[name]);
+    var lowerName = name.toLowerCase();
+    if (headers.hasOwnProperty(name) && (whitelist.length===0 || whitelist.indexOf(lowerName)>=0)) {
+      if (globalOptions.includeHeaderValues) {
+        headerData.push(lowerName + ':' + headers[name]);
       }
       else {
-        headerData.push(name.toLowerCase());
+        headerData.push(lowerName);
       }
     }
   }
@@ -295,7 +300,7 @@ function gatherFilenameHashParts(method, reqUrl, reqBody, reqHeaders) {
 
   var headers = [];
   if (globalOptions.includeHeaderNames || globalOptions.includeHeaderValues) {
-    headers = parseHeaders(reqHeaders, globalOptions.includeHeaderValues);
+    headers = parseHeaders(reqHeaders);
   }
 
   var cookieNames = [];
