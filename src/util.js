@@ -340,7 +340,6 @@ function constructAndCreateFixtureFolder(reqUrl, reqHeaders) {
 
 function constructFilename(method, reqUrl, reqBody, reqHeaders) {
   var hashParts = gatherFilenameHashParts(method, reqUrl, reqBody, reqHeaders);
-  console.log('HashParts',hashParts);
   var hash = crypto.createHash('md5');
   hash.update(JSON.stringify(hashParts));
 
