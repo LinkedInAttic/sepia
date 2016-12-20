@@ -220,9 +220,10 @@ and while one may wish to exercise both mechanisms, it is not useful to require
 that the actual authentication cookie have a particular value.
 
 Sepia generates filenames based on the presence and absence of header and
-cookie _names_. In particular, all the header names are lower-cased and sorted
-alphabetically, and this list is used to construct the fixture filename
+cookie _names_ by default. In particular, all the header names are lower-cased
+and sorted alphabetically, and this list is used to construct the fixture filename
 corresponding to a request. The same applies to the cookie names.
+
 
 If this feature is not desired, it can be disabled by calling
 `sepia.configure()`:
@@ -231,6 +232,15 @@ If this feature is not desired, it can be disabled by calling
     sepia.configure({
       includeHeaderNames: false,
       includeCookieNames: false
+    });
+
+
+If you also want to include header values, set the includeHeaderValues flag in the
+configure options:
+
+    var sepia = require('sepia');
+    sepia.configure({
+      includeHeaderValues: true
     });
 
 Additionally, a whitelist can be specified for the headers or for the cookies.
