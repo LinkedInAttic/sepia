@@ -27,7 +27,7 @@ var http = require('http');
 var request = require('request');
 var step = require('step');
 var common = require('./common');
-var sepia = require('..');
+var sepiaUtil = require('../src/util');
 
 require('..');
 
@@ -54,7 +54,7 @@ var httpServer = http.createServer(function(req, res) {
 
 // -- HTTP REQUESTS ------------------------------------------------------------
 
-function makeRequest(title, cacheHitExpected, next) {
+function makeRequest(title, next) {
   var start = Date.now();
 
   request({
@@ -72,10 +72,7 @@ function makeRequest(title, cacheHitExpected, next) {
     common.verify(function() {
       data.headers.authorization.should.equal('SERVER:TheActualSecret3');
       body.should.equal('Hello from server => TheActualSecret4');
-      //common.shouldUseCache(cacheHitExpected, time);
     });
-
-    console.log();
 
     next();
   });
@@ -92,7 +89,7 @@ step(
 
     setTimeout(this, 100);
   }, // let the server start up
-  function() { makeRequest('NO FIXTURES' , false, this); },
-  function() { makeRequest('YES FIXTURES', true , this); },
+  function() { makeRequest('NO FIXTURES' , this); },
+  function() { makeRequest('YES FIXTURES', this); },
   httpServer.close.bind(httpServer)
 );
