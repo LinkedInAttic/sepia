@@ -27,9 +27,7 @@ var http = require('http');
 var request = require('request');
 var step = require('step');
 var common = require('./common');
-var sepiaUtil = require('../src/util');
-
-require('..');
+var sepia = require('../');
 
 // -- ECHO SERVER --------------------------------------------------------------
 
