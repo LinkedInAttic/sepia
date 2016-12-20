@@ -220,9 +220,10 @@ and while one may wish to exercise both mechanisms, it is not useful to require
 that the actual authentication cookie have a particular value.
 
 Sepia generates filenames based on the presence and absence of header and
-cookie _names_. In particular, all the header names are lower-cased and sorted
-alphabetically, and this list is used to construct the fixture filename
+cookie _names_ by default. In particular, all the header names are lower-cased
+and sorted alphabetically, and this list is used to construct the fixture filename
 corresponding to a request. The same applies to the cookie names.
+
 
 If this feature is not desired, it can be disabled by calling
 `sepia.configure()`:
@@ -231,6 +232,15 @@ If this feature is not desired, it can be disabled by calling
     sepia.configure({
       includeHeaderNames: false,
       includeCookieNames: false
+    });
+
+
+If you also want to include header values, set the includeHeaderValues flag in the
+configure options:
+
+    var sepia = require('sepia');
+    sepia.configure({
+      includeHeaderValues: true
     });
 
 Additionally, a whitelist can be specified for the headers or for the cookies.
@@ -252,6 +262,16 @@ Examples of this functionality can be seen in `examples/headers.js`:
 
     rm -r fixtures # in case you had previously generated fixtures
     VCR_MODE=cache node examples/headers
+
+## Hiding Sensitive Data
+
+It is good practice to avoid checking sensitive data into source control.  Sepia
+can substituting specific text in headers and bodies with values you specify. The substitute function takes a substitution string as a first argument and a function which
+returns the actual value, presumably retrieved from the environment.  Your fixtures
+will contain the substitution string, and can be safely committed to source control.
+
+    var sepia = require('sepia');
+    sepia.substitute('<SUBSTITUTION1>', function() { return process.env.MY_API_SECRET; });
 
 ## Languages
 
@@ -399,4 +419,3 @@ data is retrieved from a file and sent back using a dummy response object.
 * [Deepank Gupta](https://github.com/deepankgupta)
 * [Priyanka Salvi](https://github.com/salvipriyanka/)
 * [Ashima Atul](https://github.com/ashimaatul)
-

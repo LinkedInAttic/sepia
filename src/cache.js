@@ -87,7 +87,8 @@ module.exports.configure = function(mode) {
       // exists, or we're playing back passed in data.
       function playback(resHeaders, resBody) {
         if (!forceLive) {
-          var headerContent = fs.readFileSync(filename + '.headers');
+          var headerContent = sepiaUtil.substituteWithRealValues(
+            fs.readFileSync(filename + '.headers').toString());
           resHeaders = JSON.parse(headerContent);
         }
 
@@ -119,7 +120,7 @@ module.exports.configure = function(mode) {
         }
 
         if (!forceLive) {
-          resBody = fs.readFileSync(filename);
+          resBody = sepiaUtil.substituteWithRealValues(fs.readFileSync(filename).toString());
         }
 
         req.emit('response', res);
@@ -187,7 +188,7 @@ module.exports.configure = function(mode) {
         };
 
         fs.writeFileSync(filename + '.headers',
-          JSON.stringify(headers, null, 2));
+          sepiaUtil.substituteWithOpaqueKeys(JSON.stringify(headers, null, 2)));
       }
 
       // Suppose the request times out while recording. We don't want the
@@ -228,7 +229,8 @@ module.exports.configure = function(mode) {
               headers: res.headers
             }, resBody);
           } else {
-            fs.writeFileSync(filename, resBody);
+            fs.writeFileSync(filename,
+              sepiaUtil.substituteWithOpaqueKeys(resBody.toString()));
 
             // Store the request, if debug is true
             if (debug) {
