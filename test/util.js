@@ -459,16 +459,16 @@ describe('utils.js', function() {
     });
   });
 
-  describe('#parseHeaderNames', function() {
-    const parseHeaderNames = sepiaUtil.internal.parseHeaderNames;
+  describe('#parseHeaders', function() {
+    const parseHeaders = sepiaUtil.internal.parseHeaders;
 
     it('returns an empty list when there are no headers', function() {
-      parseHeaderNames().should.eql([]);
-      parseHeaderNames({}).should.eql([]);
+      parseHeaders().should.eql([]);
+      parseHeaders({}).should.eql([]);
     });
 
     it('parses out all header names when there is no whitelist', function() {
-      parseHeaderNames({
+      parseHeaders({
         name1: 'value1',
         name2: 'value2'
       }).should.eql([
@@ -478,7 +478,7 @@ describe('utils.js', function() {
     });
 
     it('alphabetizes the header names', function() {
-      parseHeaderNames({
+      parseHeaders({
         b: 1,
         c: 2,
         a: 3
@@ -486,7 +486,7 @@ describe('utils.js', function() {
     });
 
     it('lower cases the header names', function() {
-      parseHeaderNames({
+      parseHeaders({
         A: 1,
         B: 2,
         C: 3
@@ -498,15 +498,40 @@ describe('utils.js', function() {
         headerWhitelist: ['a', 'b']
       });
 
-      parseHeaderNames({
+      parseHeaders({
         b: 1,
         c: 2,
         a: 3
       }).should.eql(['a', 'b']);
     });
 
+    it('includes header values if requested', function () {
+      sepiaUtil.configure({
+        includeHeaderValues: true
+      });
+
+      parseHeaders({
+        b: 1,
+        c: 2,
+        a: 3
+      }).should.eql(['a:3', 'b:1', 'c:2']);
+    });
+
+    it('includes header values if requested and filters by whitelist case insensitively', function () {
+      sepiaUtil.configure({
+        includeHeaderValues: true,
+        headerWhitelist: ['A', 'B']
+      });
+
+      parseHeaders({
+        b: 1,
+        c: 2,
+        a: 3
+      }).should.eql(['a:3', 'b:1']);
+    });
+
     it('filters out sepia headers', function() {
-      parseHeaderNames({
+      parseHeaders({
         b: 1,
         'x-sepia-internal-header': 2,
         a: 3
@@ -754,9 +779,9 @@ describe('utils.js', function() {
     });
 
 
-    it('constructs using all the available information', function() {
+    it('constructs using all the available information using default values', function() {
       sepiaUtil.setFixtureDir('/global/fixture/dir');
-      sepiaUtil.setTestOptions({ testName: 'test/name' });
+      sepiaUtil.setTestOptions({ testName: 'test/name', });
 
       var filename = constructFilename('get', 'my-url', 'my-body', {
         'accept-language': 'en-US',
@@ -767,6 +792,7 @@ describe('utils.js', function() {
       filename.should.equal('/global/fixture/dir/en-US/test/name/' +
         '32772f774a3f187d465d47a526b80e6f');
     });
+
   });
 
   describe('#urlFromHttpRequestOptions', function() {
@@ -961,4 +987,3 @@ describe('utils.js', function() {
 
   });
 });
-

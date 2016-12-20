@@ -33,6 +33,7 @@ function reset() {
 
   globalOptions.filenameFilters = [];
 
+  globalOptions.includeHeaderValues = false;
   globalOptions.includeHeaderNames = true;
   globalOptions.headerWhitelist = [];
 
@@ -58,6 +59,10 @@ reset();
 function configure(options) {
   if (options.includeHeaderNames != null) {
     globalOptions.includeHeaderNames = options.includeHeaderNames;
+  }
+
+  if (options.includeHeaderValues) {
+    globalOptions.includeHeaderValues = options.includeHeaderValues;
   }
 
   if (options.headerWhitelist != null) {
@@ -267,18 +272,24 @@ function parseCookiesNames(cookieValue) {
   return cookies.sort();
 }
 
-function parseHeaderNames(headers) {
+function parseHeaders(headers) {
   headers = removeInternalHeaders(headers);
+  var headerData = [];
+  var whitelist = globalOptions.headerWhitelist || [];
 
-  var headerNames = [];
   for (var name in headers) {
-    if (headers.hasOwnProperty(name)) {
-      headerNames.push(name.toLowerCase());
+    var lowerName = name.toLowerCase();
+    if (headers.hasOwnProperty(name) && (whitelist.length===0 || whitelist.indexOf(lowerName)>=0)) {
+      if (globalOptions.includeHeaderValues) {
+        headerData.push(lowerName + ':' + headers[name]);
+      }
+      else {
+        headerData.push(lowerName);
+      }
     }
   }
 
-  headerNames = filterByWhitelist(headerNames, globalOptions.headerWhitelist);
-  return headerNames.sort();
+  return headerData.sort();
 }
 
 function gatherFilenameHashParts(method, reqUrl, reqBody, reqHeaders) {
@@ -287,9 +298,9 @@ function gatherFilenameHashParts(method, reqUrl, reqBody, reqHeaders) {
 
   var filtered = applyMatchingFilters(reqUrl, reqBody);
 
-  var headerNames = [];
-  if (globalOptions.includeHeaderNames) {
-    headerNames = parseHeaderNames(reqHeaders);
+  var headers = [];
+  if (globalOptions.includeHeaderNames || globalOptions.includeHeaderValues) {
+    headers = parseHeaders(reqHeaders);
   }
 
   var cookieNames = [];
@@ -305,7 +316,7 @@ function gatherFilenameHashParts(method, reqUrl, reqBody, reqHeaders) {
     ['method', method],
     ['url', filtered.filteredUrl],
     ['body', filtered.filteredBody],
-    ['headerNames', headerNames],
+    ['headerNames', headers],
     ['cookieNames', cookieNames]
   ];
 }
@@ -334,7 +345,6 @@ function constructAndCreateFixtureFolder(reqUrl, reqHeaders) {
 
 function constructFilename(method, reqUrl, reqBody, reqHeaders) {
   var hashParts = gatherFilenameHashParts(method, reqUrl, reqBody, reqHeaders);
-
   var hash = crypto.createHash('md5');
   hash.update(JSON.stringify(hashParts));
 
@@ -449,7 +459,7 @@ module.exports.internal.log = log;
 module.exports.internal.logFixtureStatus = logFixtureStatus;
 module.exports.internal.logFixtureDebugStatus = logFixtureDebugStatus;
 module.exports.internal.parseCookiesNames = parseCookiesNames;
-module.exports.internal.parseHeaderNames = parseHeaderNames;
+module.exports.internal.parseHeaders = parseHeaders;
 module.exports.internal.applyMatchingFilters = applyMatchingFilters;
 module.exports.internal.gatherFilenameHashParts = gatherFilenameHashParts;
 module.exports.internal.constructAndCreateFixtureFolder =
