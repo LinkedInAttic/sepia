@@ -128,7 +128,7 @@ function substituteWithOpaqueKeys(text) {
   var substitutions = globalOptions.substitutions;
   for (var i=0; i<substitutions.length; i++) {
     var subst = substitutions[i];
-    text = text.replace(subst.actualValueFn(), subst.opaqueKey);
+    text = text.split(subst.actualValueFn()).join(subst.opaqueKey);
   }
   return text;
 }
@@ -137,7 +137,7 @@ function substituteWithRealValues(text) {
   var substitutions = globalOptions.substitutions;
   for (var i=0; i<substitutions.length; i++) {
     var subst = substitutions[i];
-    text = text.replace(subst.opaqueKey, subst.actualValueFn());
+    text = text.split(subst.opaqueKey).join(subst.actualValueFn());
   }
   return text;
 }
