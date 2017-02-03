@@ -25,6 +25,53 @@ describe('utils.js', function() {
     sepiaUtil.reset();
   });
 
+  describe('#addSubstitution', function() {
+    const addSubstitution = sepiaUtil.addSubstitution;
+
+    it('should store a list of substitutions', function() {
+      var valfn1 = function() { return 'realvalue1'; };
+      var valfn2 = function() {return 'realvalue2'; };
+      addSubstitution('<OPAQUE1>', valfn1);
+      addSubstitution('<OPAQUE2>', valfn2);
+
+      var substitutions = sepiaUtil.internal.globalOptions.substitutions;
+      substitutions[0].opaqueKey.should.equal('<OPAQUE1>');
+      substitutions[0].actualValueFn().should.equal('realvalue1');
+      substitutions[1].opaqueKey.should.equal('<OPAQUE2>');
+      substitutions[1].actualValueFn().should.equal('realvalue2');
+    });
+  });
+
+  describe('#substituteWithOpaqueKeys', function() {
+    const substituteWithOpaqueKeys = sepiaUtil.substituteWithOpaqueKeys;
+    const addSubstitution = sepiaUtil.addSubstitution;
+
+    it('should substitute real values with opaque keys', function () {
+      var valfn1 = function() {return 'realvalue1'; };
+      var valfn2 = function() {return 'realvalue2'; };
+      addSubstitution('<OPAQUE1>', valfn1);
+      addSubstitution('<OPAQUE2>', valfn2);
+
+      var text = substituteWithOpaqueKeys('A:<OPAQUE1>:B:<OPAQUE2>:C:realvalue1:D:realvalue2:E:realvalue1:F:realvalue2');
+      text.should.equal('A:<OPAQUE1>:B:<OPAQUE2>:C:<OPAQUE1>:D:<OPAQUE2>:E:<OPAQUE1>:F:<OPAQUE2>');
+    });
+  });
+
+  describe('#substituteWithRealValues', function() {
+    const substituteWithRealValues= sepiaUtil.substituteWithRealValues;
+    const addSubstitution = sepiaUtil.addSubstitution;
+
+    it('should substitute opaque keys with real values', function () {
+      var valfn1 = function() {return 'realvalue1'; };
+      var valfn2 = function() {return 'realvalue2'; };
+      addSubstitution('<OPAQUE1>', valfn1);
+      addSubstitution('<OPAQUE2>', valfn2);
+
+      var text = substituteWithRealValues('A:<OPAQUE1>:B:<OPAQUE2>:C:realvalue1:D:realvalue2:E:<OPAQUE1>:F:<OPAQUE2>');
+      text.should.equal('A:realvalue1:B:realvalue2:C:realvalue1:D:realvalue2:E:realvalue1:F:realvalue2');
+    });
+  });
+
   describe('#addFilter', function() {
     const addFilter = sepiaUtil.addFilter;
 
@@ -961,4 +1008,3 @@ describe('utils.js', function() {
 
   });
 });
-

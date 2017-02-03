@@ -253,6 +253,16 @@ Examples of this functionality can be seen in `examples/headers.js`:
     rm -r fixtures # in case you had previously generated fixtures
     VCR_MODE=cache node examples/headers
 
+## Hiding Sensitive Data
+
+It is good practice to avoid checking sensitive data into source control.  Sepia
+can substituting specific text in headers and bodies with values you specify. The substitute function takes a substitution string as a first argument and a function which
+returns the actual value, presumably retrieved from the environment.  Your fixtures
+will contain the substitution string, and can be safely committed to source control.
+
+    var sepia = require('sepia');
+    sepia.substitute('<SUBSTITUTION1>', function() { return process.env.MY_API_SECRET; });
+
 ## Languages
 
 A downstream request may return different data based on the language requested
@@ -399,4 +409,3 @@ data is retrieved from a file and sent back using a dummy response object.
 * [Deepank Gupta](https://github.com/deepankgupta)
 * [Priyanka Salvi](https://github.com/salvipriyanka/)
 * [Ashima Atul](https://github.com/ashimaatul)
-

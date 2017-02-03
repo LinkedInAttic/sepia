@@ -76,3 +76,8 @@ VCR_MODE=cache node examples/forceLive
 start_test 'test-specific fixture directories'
 rm -r fixtures/
 VCR_MODE=cache node examples/testName
+
+start_test 'substitute secrets'
+rm -r fixtures/
+VCR_MODE=record   node examples/substitutions
+VCR_MODE=playback node examples/substitutions
