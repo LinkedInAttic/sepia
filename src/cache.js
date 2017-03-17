@@ -52,6 +52,14 @@ module.exports.configure = function(mode) {
 
   protocolModule.request = function(options, callback) {
     var reqUrl = sepiaUtil.urlFromHttpRequestOptions(options, protocol);
+    var forceLive = sepiaUtil.shouldForceLive(reqUrl);
+
+    if (forceLive) {
+      // Just pass thru live requests
+      // websocket connections fail if we proxy
+      return oldRequest.apply(this, arguments);
+    }
+
     var reqBody = [];
     var debug = sepiaUtil.shouldFindMatchingFixtures();
 
@@ -80,8 +88,6 @@ module.exports.configure = function(mode) {
         reqBody.toString(), options.headers);
 
       options.headers = sepiaUtil.removeInternalHeaders(options.headers);
-
-      var forceLive = sepiaUtil.shouldForceLive(reqUrl);
 
       // Only called if either the fixture with the constructed filename
       // exists, or we're playing back passed in data.
