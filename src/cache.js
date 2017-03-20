@@ -187,10 +187,12 @@ module.exports.configure = function(mode) {
         var timeLength = Date.now() - startTime;
         headers.url = reqUrl;
         headers.time = timeLength;
-        headers.request = {
-          method: options.method,
-          headers: options.headers
-        };
+        // Do not include the request in the header file
+        // it's not used and there is a separate debug option for this
+        // headers.request = {
+        //   method: options.method,
+        //   headers: sepiaUtil.parseHeaderNames(options.headers)
+        // };
 
         fs.writeFileSync(filename + '.headers',
           JSON.stringify(headers, null, 2));
