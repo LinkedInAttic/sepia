@@ -52,6 +52,23 @@ module.exports.configure = function(mode) {
 
   protocolModule.request = function(options, callback) {
     var reqUrl = sepiaUtil.urlFromHttpRequestOptions(options, protocol);
+    var forceLive = sepiaUtil.shouldForceLive(reqUrl);
+
+    if (forceLive) {
+      // Just pass thru live requests
+      // websocket connections fail if we proxy
+      return oldRequest.apply(this, arguments);
+    }
+
+    // Remove any gzip headers
+    if (sepiaUtil.gzipDisabled()) {
+      if (options.headers && options.headers['accept-encoding']) {
+        var gzipHeaders = ['gzip,deflate'];
+        options.headers['accept-encoding'] = options.headers['accept-encoding']
+          .filter((h) => !gzipHeaders.includes(h));
+      }
+    }
+
     var reqBody = [];
     var debug = sepiaUtil.shouldFindMatchingFixtures();
 
@@ -80,8 +97,6 @@ module.exports.configure = function(mode) {
         reqBody.toString(), options.headers);
 
       options.headers = sepiaUtil.removeInternalHeaders(options.headers);
-
-      var forceLive = sepiaUtil.shouldForceLive(reqUrl);
 
       // Only called if either the fixture with the constructed filename
       // exists, or we're playing back passed in data.
@@ -181,10 +196,12 @@ module.exports.configure = function(mode) {
         var timeLength = Date.now() - startTime;
         headers.url = reqUrl;
         headers.time = timeLength;
-        headers.request = {
-          method: options.method,
-          headers: options.headers
-        };
+        // Do not include the request in the header file
+        // it's not used and there is a separate debug option for this
+        // headers.request = {
+        //   method: options.method,
+        //   headers: sepiaUtil.parseHeaderNames(options.headers)
+        // };
 
         fs.writeFileSync(filename + '.headers',
           JSON.stringify(headers, null, 2));

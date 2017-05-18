@@ -50,6 +50,9 @@ function reset() {
   // These test options are set via an HTTP request to the embedded HTTP server
   // provided by sepia. The options are reset each time any of them are set.
   globalOptions.testOptions = {};
+
+  // Strip out gzip headers so plain text is provided
+  globalOptions.doNotGzip = false;
 }
 
 // automatically reset the state of the module when 'required'.
@@ -91,12 +94,24 @@ function configure(options) {
   if (options.debug != null) {
     globalOptions.debug = options.debug;
   }
+
+  if (options.doNotGzip != null) {
+    globalOptions.doNotGzip = options.doNotGzip;
+  }
 }
 
 // This is a commonly-used option, and thus, it should have its own function to
 // set its value.
 function setFixtureDir(fixtureDir) {
   globalOptions.filenamePrefix = fixtureDir;
+}
+
+function disableGzip() {
+  globalOptions.doNotGzip = true;
+}
+
+function gzipDisabled() {
+  return globalOptions.doNotGzip;
 }
 
 function setTestOptions(options) {
@@ -431,6 +446,8 @@ module.exports.reset = reset;
 module.exports.configure = configure;
 module.exports.setFixtureDir = setFixtureDir;
 module.exports.setTestOptions = setTestOptions;
+module.exports.disableGzip = disableGzip;
+module.exports.gzipDisabled = gzipDisabled;
 module.exports.addFilter = addFilter;
 module.exports.constructFilename = constructFilename;
 module.exports.urlFromHttpRequestOptions = urlFromHttpRequestOptions;
