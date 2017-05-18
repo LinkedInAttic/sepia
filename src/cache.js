@@ -60,6 +60,15 @@ module.exports.configure = function(mode) {
       return oldRequest.apply(this, arguments);
     }
 
+    // Remove any gzip headers
+    if (sepiaUtil.gzipDisabled()) {
+      if (options.headers && options.headers['accept-encoding']) {
+        var gzipHeaders = ['gzip,deflate'];
+        options.headers['accept-encoding'] = options.headers['accept-encoding']
+          .filter((h) => !gzipHeaders.includes(h));
+      }
+    }
+
     var reqBody = [];
     var debug = sepiaUtil.shouldFindMatchingFixtures();
 
